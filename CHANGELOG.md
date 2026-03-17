@@ -1,3 +1,27 @@
+# [3.8.0](https://github.com/trycompai/comp/compare/v3.7.2...v3.8.0) (2026-03-17)
+
+
+### Bug Fixes
+
+* **api:** make sure azure assessmet tile is not empty ([d5915ca](https://github.com/trycompai/comp/commit/d5915cafa77b6eb82510369b0ee396be32f54784))
+* **app:** upgrade the model in workflow visualizer file ([c1194be](https://github.com/trycompai/comp/commit/c1194bee67d11f53a972e40167768c778eb2f9db))
+* **app:** use claude-sonnet-4.6 model ([ae5ad4b](https://github.com/trycompai/comp/commit/ae5ad4b89059af4112e87d5e91be82b29da01815))
+* **app:** use gemini 3.1 flash lite with high reasoning ([31fc265](https://github.com/trycompai/comp/commit/31fc2653ced83ce47ca3aa29d43a8c756584d431))
+* fix inline editing for sections in ai policy editor ([2ac265b](https://github.com/trycompai/comp/commit/2ac265bb31ff7120428ed4f1f5b0f851f60e6900))
+* **integration-platform:** improve error handling in RampRoleMappingContent ([6105a67](https://github.com/trycompai/comp/commit/6105a674fe3eb78533c9bf690de9d95f73d165de))
+
+
+### Features
+
+* improve AI policy editor, better UI/UX and smarter ([7f873aa](https://github.com/trycompai/comp/commit/7f873aa655f70fa6946c4b1f48337db989261992))
+* **integration-platform:** add Ramp role mapping functionality ([3cf5fe4](https://github.com/trycompai/comp/commit/3cf5fe4c5f923459fd6e93187ce6251424fe7b5a))
+* **integration-platform:** enhance role mapping persistence logic ([7e52ec4](https://github.com/trycompai/comp/commit/7e52ec41a1789cc1a1ba042b397811d1c2db4809))
+* **integration-platform:** enhance sync logging for role mapping configuration ([433a1be](https://github.com/trycompai/comp/commit/433a1be746e6c913b03ccbfe1800dec1450f1965))
+* **integration-platform:** implement RampApiService for user management ([638e670](https://github.com/trycompai/comp/commit/638e670aa8b82b749aed5deaade5a8def58be2c4))
+* **integration-platform:** integrate logging for role mapping and sync operations ([13e6446](https://github.com/trycompai/comp/commit/13e644659bee5dfe38de30b75481a9f3f284dd73))
+* **integration-platform:** validate connection existence in role mapping endpoints ([5d373ec](https://github.com/trycompai/comp/commit/5d373ec4add70fb0b801761dd5657755acc271b5))
+* **policy-editor:** add inline AI text editing via selection bubble ([#2326](https://github.com/trycompai/comp/issues/2326)) ([f85e757](https://github.com/trycompai/comp/commit/f85e757770acf5189d3983056b07930392e9b771))
+
 ## [3.7.2](https://github.com/trycompai/comp/compare/v3.7.1...v3.7.2) (2026-03-17)
 
 
