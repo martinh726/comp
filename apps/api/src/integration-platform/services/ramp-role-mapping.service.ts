@@ -79,7 +79,7 @@ export class RampRoleMappingService {
 
   /**
    * Ensure all custom roles in the mapping exist in the database.
-   * Creates missing ones. Returns a map of compRole name → role name (for assignment).
+   * Creates missing ones.
    */
   async ensureCustomRolesExist(
     organizationId: string,
@@ -95,18 +95,6 @@ export class RampRoleMappingService {
       if (existing) {
         this.logger.log(
           `Custom role "${entry.compRole}" already exists for org ${organizationId}`,
-        );
-        continue;
-      }
-
-      // Check max roles limit
-      const roleCount = await db.organizationRole.count({
-        where: { organizationId },
-      });
-
-      if (roleCount >= 20) {
-        this.logger.warn(
-          `Cannot create role "${entry.compRole}" — max 20 custom roles reached`,
         );
         continue;
       }
