@@ -11,6 +11,7 @@ import type {
 } from '@db';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { SingleTask } from './components/SingleTask';
 
 type TaskWithControls = Task & { controls: Control[] };
@@ -62,13 +63,15 @@ export default async function TaskPage({
   }
 
   return (
-    <SingleTask
-      initialTask={task}
-      initialMembers={members}
-      initialAutomations={automations}
-      isWebAutomationsEnabled={isWebAutomationsEnabled}
-      isPlatformAdmin={isPlatformAdmin}
-      evidenceApprovalEnabled={evidenceApprovalEnabled}
-    />
+    <Suspense>
+      <SingleTask
+        initialTask={task}
+        initialMembers={members}
+        initialAutomations={automations}
+        isWebAutomationsEnabled={isWebAutomationsEnabled}
+        isPlatformAdmin={isPlatformAdmin}
+        evidenceApprovalEnabled={evidenceApprovalEnabled}
+      />
+    </Suspense>
   );
 }
