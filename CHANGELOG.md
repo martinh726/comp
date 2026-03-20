@@ -1,3 +1,11 @@
+## [3.10.4](https://github.com/trycompai/comp/compare/v3.10.3...v3.10.4) (2026-03-20)
+
+
+### Bug Fixes
+
+* 2FA GWS workspace returning users that have been excluded from the config ([bac5138](https://github.com/trycompai/comp/commit/bac513835f8a3a235acfa4596451dc09733f4819))
+* allow trust portal subdomains and custom domains through CORS ([#2354](https://github.com/trycompai/comp/issues/2354)) ([10c467d](https://github.com/trycompai/comp/commit/10c467d3786fcc7dd32f5661788c4b745a660bb2))
+
 ## [3.10.3](https://github.com/trycompai/comp/compare/v3.10.2...v3.10.3) (2026-03-20)
 
 
