@@ -120,6 +120,9 @@ export type {
 // Individual manifests (for direct import if needed)
 export { manifest as githubManifest } from './manifests/github';
 
+// Directory sync email include/exclude terms (Google Workspace, JumpCloud, checks)
+export { matchesSyncFilterTerms, parseSyncFilterTerms } from './sync-filter/email-exclusion-terms';
+
 // Ramp types (used by sync controller)
 export type {
   RampUser,

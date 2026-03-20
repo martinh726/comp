@@ -1,5 +1,6 @@
 import { TASK_TEMPLATES } from '../../../task-mappings';
 import type { CheckContext, IntegrationCheck } from '../../../types';
+import { matchesSyncFilterTerms, parseSyncFilterTerms } from '../../../sync-filter/email-exclusion-terms';
 import type { GoogleWorkspaceUser, GoogleWorkspaceUsersResponse } from '../types';
 import { includeSuspendedVariable, targetOrgUnitsVariable } from '../variables';
 
@@ -18,6 +19,11 @@ export const twoFactorAuthCheck: IntegrationCheck = {
     ctx.log('Starting Google Workspace 2FA check');
 
     const targetOrgUnits = ctx.variables.target_org_units as string[] | undefined;
+    const excludedTerms = parseSyncFilterTerms(
+      ctx.variables.sync_excluded_emails ?? ctx.variables.excluded_emails,
+    );
+    const includedTerms = parseSyncFilterTerms(ctx.variables.sync_included_emails);
+    const userFilterMode = ctx.variables.sync_user_filter_mode as 'all' | 'exclude' | 'include' | undefined;
     const includeSuspended = ctx.variables.include_suspended === 'true';
 
     // Fetch all users with pagination
@@ -60,11 +66,28 @@ export const twoFactorAuthCheck: IntegrationCheck = {
         return false;
       }
 
-      // Filter by org unit if specified
+      // Org units first, then sync email filter — same order as employee sync (sync.controller.ts)
       if (targetOrgUnits && targetOrgUnits.length > 0) {
-        return targetOrgUnits.some(
-          (ou) => user.orgUnitPath === ou || user.orgUnitPath.startsWith(`${ou}/`),
+        const userOu = user.orgUnitPath ?? '/';
+        const inOrgUnit = targetOrgUnits.some(
+          (ou) => ou === '/' || userOu === ou || userOu.startsWith(`${ou}/`),
         );
+        if (!inOrgUnit) {
+          return false;
+        }
+      }
+
+      const email = user.primaryEmail.toLowerCase();
+
+      if (userFilterMode === 'exclude' && excludedTerms.length > 0) {
+        return !matchesSyncFilterTerms(email, excludedTerms);
+      }
+
+      if (userFilterMode === 'include') {
+        if (includedTerms.length === 0) {
+          return true;
+        }
+        return matchesSyncFilterTerms(email, includedTerms);
       }
 
       return true;

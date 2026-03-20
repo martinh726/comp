@@ -24,6 +24,8 @@ import { CredentialVaultService } from '../services/credential-vault.service';
 import { OAuthCredentialsService } from '../services/oauth-credentials.service';
 import {
   getManifest,
+  matchesSyncFilterTerms,
+  parseSyncFilterTerms,
   type OAuthConfig,
   type RampUser,
   type RampUserStatus,
@@ -57,49 +59,6 @@ type GoogleWorkspaceSyncFilterMode = 'all' | 'exclude' | 'include';
 
 const GOOGLE_WORKSPACE_SYNC_FILTER_MODES =
   new Set<GoogleWorkspaceSyncFilterMode>(['all', 'exclude', 'include']);
-
-const parseSyncFilterTerms = (value: unknown): string[] => {
-  const rawValues = Array.isArray(value)
-    ? value.map((item) => String(item))
-    : typeof value === 'string'
-      ? [value]
-      : [];
-
-  return Array.from(
-    new Set(
-      rawValues
-        .flatMap((item) => item.split(/[\n,;]+/))
-        .map((item) => item.trim().toLowerCase())
-        .filter((item) => item.length > 0),
-    ),
-  );
-};
-
-const isFullEmailTerm = (term: string): boolean =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(term);
-
-const matchesSyncFilterTerm = (email: string, term: string): boolean => {
-  if (email === term) {
-    return true;
-  }
-
-  if (term.startsWith('@')) {
-    return email.endsWith(term);
-  }
-
-  if (isFullEmailTerm(term)) {
-    return false;
-  }
-
-  if (term.includes('@')) {
-    return email.includes(term);
-  }
-
-  return email.endsWith(`@${term}`) || email.includes(term);
-};
-
-const matchesSyncFilterTerms = (email: string, terms: string[]): boolean =>
-  terms.some((term) => matchesSyncFilterTerm(email, term));
 
 @Controller({ path: 'integrations/sync', version: '1' })
 @ApiTags('Integrations')
