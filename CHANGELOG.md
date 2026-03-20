@@ -1,3 +1,10 @@
+## [3.10.3](https://github.com/trycompai/comp/compare/v3.10.2...v3.10.3) (2026-03-20)
+
+
+### Bug Fixes
+
+* **api:** validate WebP files with full RIFF+WEBP signature check ([#2348](https://github.com/trycompai/comp/issues/2348)) ([0c41717](https://github.com/trycompai/comp/commit/0c417170d0ecb822d3f834c22ebea5370063ed3e)), closes [hi#bit](https://github.com/hi/issues/bit)
+
 ## [3.10.2](https://github.com/trycompai/comp/compare/v3.10.1...v3.10.2) (2026-03-19)
 
 
