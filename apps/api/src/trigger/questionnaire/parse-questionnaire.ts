@@ -239,7 +239,7 @@ export const parseQuestionnaireTask = task({
   retry: {
     maxAttempts: 2,
   },
-  maxDuration: 1000 * 60 * 30, // 30 minutes for large PDF questionnaires
+  maxDuration: 60 * 30, // 30 minutes (in seconds) for large PDF questionnaires
   run: async (payload: {
     inputType: 'file' | 'url' | 'attachment' | 's3';
     organizationId: string;
