@@ -246,6 +246,7 @@ export const parseQuestionnaireTask = task({
     fileData?: string;
     fileName?: string;
     fileType?: string;
+    fileSize?: number;
     url?: string;
     attachmentId?: string;
     s3Key?: string;
@@ -343,9 +344,10 @@ export const parseQuestionnaireTask = task({
           'questionnaire';
         const s3Key = payload.s3Key || '';
         const fileType = payload.fileType || 'application/octet-stream';
-        const fileSize = payload.fileData
-          ? Buffer.from(payload.fileData, 'base64').length
-          : 0;
+        const fileSize = payload.fileSize
+          ?? (payload.fileData
+            ? Buffer.from(payload.fileData, 'base64').length
+            : 0);
 
         const questionnaire = await db.questionnaire.create({
           data: {

@@ -236,6 +236,7 @@ export class QuestionnaireService {
         s3Key: uploadInfo.s3Key,
         fileName: dto.fileName,
         fileType: dto.fileType,
+        fileSize: uploadInfo.fileSize,
       },
     );
 
