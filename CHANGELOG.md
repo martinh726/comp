@@ -1,3 +1,10 @@
+## [3.11.2](https://github.com/trycompai/comp/compare/v3.11.1...v3.11.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* **frameworks:** respect securityTrainingStepEnabled in overview people score ([160f8d2](https://github.com/trycompai/comp/commit/160f8d2a0bdc4a2bb8547a9884c10f84a152dab5))
+
 ## [3.11.1](https://github.com/trycompai/comp/compare/v3.11.0...v3.11.1) (2026-03-24)
 
 
