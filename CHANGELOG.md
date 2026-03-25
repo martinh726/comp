@@ -1,3 +1,10 @@
+## [3.11.5](https://github.com/trycompai/comp/compare/v3.11.4...v3.11.5) (2026-03-25)
+
+
+### Bug Fixes
+
+* **vendors:** skip assignee validation when assignee hasn't changed ([9e508c2](https://github.com/trycompai/comp/commit/9e508c2c4b2a7728c4f8d4778323f31729a82a15))
+
 ## [3.11.4](https://github.com/trycompai/comp/compare/v3.11.3...v3.11.4) (2026-03-25)
 
 
