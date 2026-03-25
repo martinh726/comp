@@ -1,3 +1,10 @@
+## [3.11.3](https://github.com/trycompai/comp/compare/v3.11.2...v3.11.3) (2026-03-25)
+
+
+### Bug Fixes
+
+* **trust-portal:** fix CORS for custom domain trust portals ([#2371](https://github.com/trycompai/comp/issues/2371)) ([0d54899](https://github.com/trycompai/comp/commit/0d5489959d3675d3de7f1bc36c34b3c52c876f10))
+
 ## [3.11.2](https://github.com/trycompai/comp/compare/v3.11.1...v3.11.2) (2026-03-25)
 
 
