@@ -55,6 +55,7 @@ export class DynamicIntegrationsController {
     const def = validation.data!;
 
     // Upsert the integration
+    const rawSyncDef = (body as Record<string, unknown>).syncDefinition;
     const integration = await this.dynamicIntegrationRepo.upsertBySlug({
       slug: def.slug,
       name: def.name,
@@ -67,6 +68,9 @@ export class DynamicIntegrationsController {
       authConfig: def.authConfig as unknown as Prisma.InputJsonValue,
       capabilities: def.capabilities as unknown as Prisma.InputJsonValue,
       supportsMultipleConnections: def.supportsMultipleConnections,
+      syncDefinition: rawSyncDef
+        ? (rawSyncDef as Prisma.InputJsonValue)
+        : undefined,
     });
 
     // Delete checks not in the new definition, then upsert the rest
@@ -138,6 +142,7 @@ export class DynamicIntegrationsController {
       );
     }
 
+    const rawSyncDef = (body as Record<string, unknown>).syncDefinition;
     const integration = await this.dynamicIntegrationRepo.create({
       slug: def.slug,
       name: def.name,
@@ -150,6 +155,9 @@ export class DynamicIntegrationsController {
       authConfig: def.authConfig as unknown as Prisma.InputJsonValue,
       capabilities: def.capabilities as unknown as Prisma.InputJsonValue,
       supportsMultipleConnections: def.supportsMultipleConnections,
+      syncDefinition: rawSyncDef
+        ? (rawSyncDef as Prisma.InputJsonValue)
+        : undefined,
     });
 
     for (const [index, check] of def.checks.entries()) {
