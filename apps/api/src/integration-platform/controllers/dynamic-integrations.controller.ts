@@ -13,12 +13,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import { db } from '@db';
 import { InternalTokenGuard } from '../../auth/internal-token.guard';
 import { DynamicIntegrationRepository } from '../repositories/dynamic-integration.repository';
 import { DynamicCheckRepository } from '../repositories/dynamic-check.repository';
 import { ProviderRepository } from '../repositories/provider.repository';
+import { CheckRunRepository } from '../repositories/check-run.repository';
 import { DynamicManifestLoaderService } from '../services/dynamic-manifest-loader.service';
-import { validateIntegrationDefinition } from '@trycompai/integration-platform';
+import {
+  validateIntegrationDefinition,
+  CheckDefinitionSchema,
+} from '@trycompai/integration-platform';
 
 @Controller({ path: 'internal/dynamic-integrations', version: '1' })
 @UseGuards(InternalTokenGuard)
@@ -29,6 +34,7 @@ export class DynamicIntegrationsController {
     private readonly dynamicIntegrationRepo: DynamicIntegrationRepository,
     private readonly dynamicCheckRepo: DynamicCheckRepository,
     private readonly providerRepo: ProviderRepository,
+    private readonly checkRunRepo: CheckRunRepository,
     private readonly loaderService: DynamicManifestLoaderService,
   ) {}
 
@@ -364,5 +370,155 @@ export class DynamicIntegrationsController {
 
     this.logger.log(`Deactivated dynamic integration: ${integration.slug}`);
     return { success: true };
+  }
+
+  // ==================== Agent Debugging Endpoints ====================
+
+  /**
+   * Validate a definition without saving.
+   * Agents use this to check syntax/structure before committing.
+   */
+  @Post('validate')
+  async validate(@Body() body: Record<string, unknown>) {
+    const result = validateIntegrationDefinition(body);
+
+    if (!result.success) {
+      return {
+        valid: false,
+        errors: result.errors,
+      };
+    }
+
+    // The top-level validateIntegrationDefinition already validates
+    // all checks and syncDefinition via Zod. If we got here, everything is valid.
+    // Do additional per-check validation for detailed error reporting.
+    const checkErrors: Array<{ checkSlug: string; errors: Array<{ path: string; message: string }> }> = [];
+    const definition = result.data!;
+    const rawBody = body as Record<string, unknown>;
+
+    for (const check of definition.checks) {
+      const checkResult = CheckDefinitionSchema.safeParse(check.definition);
+      if (!checkResult.success) {
+        checkErrors.push({
+          checkSlug: check.checkSlug,
+          errors: checkResult.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        });
+      }
+    }
+
+    return {
+      valid: checkErrors.length === 0,
+      ...(checkErrors.length > 0 ? { checkErrors } : {}),
+      summary: {
+        slug: definition.slug,
+        name: definition.name,
+        category: definition.category,
+        capabilities: definition.capabilities,
+        checksCount: definition.checks.length,
+        hasSyncDefinition: !!rawBody.syncDefinition,
+      },
+    };
+  }
+
+  /**
+   * Get recent check run history for a dynamic integration.
+   * Agents use this to debug failing checks — includes full logs and results.
+   */
+  @Get(':id/check-runs')
+  async getCheckRuns(@Param('id') id: string) {
+    const integration = await this.dynamicIntegrationRepo.findById(id);
+    if (!integration) {
+      throw new HttpException('Dynamic integration not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Find all connections for this provider
+    const connections = await db.integrationConnection.findMany({
+      where: {
+        provider: { slug: integration.slug },
+        status: 'active',
+      },
+      select: { id: true, organizationId: true },
+    });
+
+    if (connections.length === 0) {
+      return { runs: [], total: 0 };
+    }
+
+    // Get recent runs across all connections
+    const runs = await db.integrationCheckRun.findMany({
+      where: {
+        connectionId: { in: connections.map((c) => c.id) },
+      },
+      include: {
+        results: {
+          select: {
+            id: true,
+            passed: true,
+            title: true,
+            resourceType: true,
+            resourceId: true,
+            severity: true,
+            remediation: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return {
+      runs: runs.map((run) => ({
+        id: run.id,
+        checkId: run.checkId,
+        checkName: run.checkName,
+        connectionId: run.connectionId,
+        status: run.status,
+        startedAt: run.startedAt,
+        completedAt: run.completedAt,
+        durationMs: run.durationMs,
+        totalChecked: run.totalChecked,
+        passedCount: run.passedCount,
+        failedCount: run.failedCount,
+        errorMessage: run.errorMessage,
+        logs: run.logs,
+        results: run.results,
+      })),
+      total: runs.length,
+    };
+  }
+
+  /**
+   * Get a single check run with full details (logs, results, error info).
+   * Agents use this to debug a specific failed run.
+   */
+  @Get('check-runs/:runId')
+  async getCheckRunById(@Param('runId') runId: string) {
+    const run = await this.checkRunRepo.findById(runId);
+    if (!run) {
+      throw new HttpException('Check run not found', HttpStatus.NOT_FOUND);
+    }
+
+    return {
+      id: run.id,
+      checkId: run.checkId,
+      checkName: run.checkName,
+      connectionId: run.connectionId,
+      status: run.status,
+      startedAt: run.startedAt,
+      completedAt: run.completedAt,
+      durationMs: run.durationMs,
+      totalChecked: run.totalChecked,
+      passedCount: run.passedCount,
+      failedCount: run.failedCount,
+      errorMessage: run.errorMessage,
+      logs: run.logs,
+      results: run.results,
+      provider: run.connection?.provider
+        ? { slug: run.connection.provider.slug, name: run.connection.provider.name }
+        : null,
+    };
   }
 }
