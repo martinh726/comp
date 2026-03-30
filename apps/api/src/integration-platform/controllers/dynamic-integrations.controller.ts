@@ -75,7 +75,7 @@ export class DynamicIntegrationsController {
       supportsMultipleConnections: def.supportsMultipleConnections,
       syncDefinition: validatedSyncDef
         ? (JSON.parse(JSON.stringify(validatedSyncDef)) as Prisma.InputJsonValue)
-        : undefined,
+        : null,
     });
 
     // Delete checks not in the new definition, then upsert the rest

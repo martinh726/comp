@@ -100,7 +100,7 @@ export class DynamicIntegrationRepository {
     authConfig: Prisma.InputJsonValue;
     capabilities?: Prisma.InputJsonValue;
     supportsMultipleConnections?: boolean;
-    syncDefinition?: Prisma.InputJsonValue;
+    syncDefinition?: Prisma.InputJsonValue | null;
   }): Promise<DynamicIntegration> {
     return db.dynamicIntegration.upsert({
       where: { slug: data.slug },
@@ -129,7 +129,9 @@ export class DynamicIntegrationRepository {
         authConfig: data.authConfig,
         capabilities: data.capabilities ?? ['checks'],
         supportsMultipleConnections: data.supportsMultipleConnections ?? false,
-        syncDefinition: data.syncDefinition ?? undefined,
+        syncDefinition: data.syncDefinition === null
+          ? Prisma.DbNull
+          : (data.syncDefinition ?? undefined),
       },
     });
   }

@@ -241,32 +241,7 @@ export type DSLStep =
   | CodeStep;
 
 // ============================================================================
-// Check Definition (the top-level DSL object)
-// ============================================================================
-
-export const CheckDefinitionSchema = z.object({
-  steps: z.array(DSLStepSchema),
-  variables: z
-    .array(
-      z.object({
-        id: z.string(),
-        label: z.string(),
-        type: z.enum(['text', 'number', 'boolean', 'select', 'multi-select']),
-        required: z.boolean().optional(),
-        default: z.unknown().optional(),
-        helpText: z.string().optional(),
-        options: z
-          .array(z.object({ value: z.string(), label: z.string() }))
-          .optional(),
-      }),
-    )
-    .optional(),
-});
-
-export type CheckDefinition = z.infer<typeof CheckDefinitionSchema>;
-
-// ============================================================================
-// Sync Definition (for dynamic employee sync)
+// Shared Variable Schema (used by checks, sync, and integration definitions)
 // ============================================================================
 
 export const VariableSchema = z.object({
@@ -280,6 +255,21 @@ export const VariableSchema = z.object({
     .array(z.object({ value: z.string(), label: z.string() }))
     .optional(),
 });
+
+// ============================================================================
+// Check Definition (the top-level DSL object)
+// ============================================================================
+
+export const CheckDefinitionSchema = z.object({
+  steps: z.array(DSLStepSchema),
+  variables: z.array(VariableSchema).optional(),
+});
+
+export type CheckDefinition = z.infer<typeof CheckDefinitionSchema>;
+
+// ============================================================================
+// Sync Definition (for dynamic employee sync)
+// ============================================================================
 
 export const SyncEmployeeSchema = z.object({
   email: z.string(),
@@ -341,20 +331,7 @@ export const DynamicIntegrationDefinitionSchema = z.object({
       taskMapping: z.string().optional(),
       defaultSeverity: z.enum(['info', 'low', 'medium', 'high', 'critical']).optional(),
       definition: CheckDefinitionSchema,
-      variables: z
-        .array(
-          z.object({
-            id: z.string(),
-            label: z.string(),
-            type: z.enum(['text', 'number', 'boolean', 'select', 'multi-select']),
-            required: z.boolean().optional(),
-            default: z.unknown().optional(),
-            helpText: z.string().optional(),
-            options: z
-              .array(z.object({ value: z.string(), label: z.string() }))
-              .optional(),
-          }),
-        )
+      variables: z.array(VariableSchema)
         .optional(),
       isEnabled: z.boolean().optional(),
       sortOrder: z.number().optional(),
