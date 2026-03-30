@@ -253,11 +253,16 @@ export function createCheckContext(options: CheckContextOptions): {
     opts?: { baseUrl?: string; headers?: Record<string, string> },
   ): Promise<T> {
     const url = buildUrl(path, opts?.baseUrl);
+    const merged = buildHeaders(opts?.headers);
+    // Only set Content-Type to JSON if not already specified (allows form-encoded)
+    if (!merged['Content-Type'] && !merged['content-type']) {
+      merged['Content-Type'] = 'application/json';
+    }
     return executeRequest<T>(() =>
       fetch(url.toString(), {
         method: 'POST',
-        headers: { ...buildHeaders(opts?.headers), 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
+        headers: merged,
+        body: body != null ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       }),
     );
   }
@@ -268,11 +273,15 @@ export function createCheckContext(options: CheckContextOptions): {
     opts?: { baseUrl?: string; headers?: Record<string, string> },
   ): Promise<T> {
     const url = buildUrl(path, opts?.baseUrl);
+    const merged = buildHeaders(opts?.headers);
+    if (!merged['Content-Type'] && !merged['content-type']) {
+      merged['Content-Type'] = 'application/json';
+    }
     return executeRequest<T>(() =>
       fetch(url.toString(), {
         method: 'PUT',
-        headers: { ...buildHeaders(opts?.headers), 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
+        headers: merged,
+        body: body != null ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       }),
     );
   }
@@ -283,11 +292,15 @@ export function createCheckContext(options: CheckContextOptions): {
     opts?: { baseUrl?: string; headers?: Record<string, string> },
   ): Promise<T> {
     const url = buildUrl(path, opts?.baseUrl);
+    const merged = buildHeaders(opts?.headers);
+    if (!merged['Content-Type'] && !merged['content-type']) {
+      merged['Content-Type'] = 'application/json';
+    }
     return executeRequest<T>(() =>
       fetch(url.toString(), {
         method: 'PATCH',
-        headers: { ...buildHeaders(opts?.headers), 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
+        headers: merged,
+        body: body != null ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       }),
     );
   }
