@@ -1505,16 +1505,13 @@ export class SyncController {
       throw new HttpException('Organization not found', HttpStatus.NOT_FOUND);
     }
 
-    // Auto-clear stale provider if the manifest no longer exists in the registry
-    if (org.employeeSyncProvider) {
-      const manifest = getManifest(org.employeeSyncProvider);
-      if (!manifest) {
-        await db.organization.update({
-          where: { id: organizationId },
-          data: { employeeSyncProvider: null },
-        });
-        return { provider: null };
-      }
+    // Clear stale provider for integrations that have been removed
+    if (org.employeeSyncProvider === 'ramp') {
+      await db.organization.update({
+        where: { id: organizationId },
+        data: { employeeSyncProvider: null },
+      });
+      return { provider: null };
     }
 
     return {
