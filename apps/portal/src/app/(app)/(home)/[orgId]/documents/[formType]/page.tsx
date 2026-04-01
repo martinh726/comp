@@ -11,28 +11,6 @@ import { PortalFormClient } from './PortalFormClient';
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 
-async function getJwtToken(cookieHeader: string): Promise<string | null> {
-  if (!cookieHeader) return null;
-
-  try {
-    // Use the main app's auth URL — the API validates JWTs against the main
-    // app's JWKS, so the token must be issued by the main app, not the portal.
-    const authUrl = env.APP_AUTH_URL || 'http://localhost:3000';
-    const tokenResponse = await fetch(`${authUrl}/api/auth/token`, {
-      method: 'GET',
-      headers: { Cookie: cookieHeader },
-    });
-
-    if (!tokenResponse.ok) return null;
-
-    const tokenData = await tokenResponse.json();
-    return tokenData?.token ?? null;
-  } catch (error) {
-    // Token retrieval failed - caller handles null return
-    return null;
-  }
-}
-
 export default async function PortalCompanyFormPage({
   params,
   searchParams,
@@ -84,17 +62,14 @@ export default async function PortalCompanyFormPage({
 
     const apiUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
     const cookie = reqHeaders.get('cookie') ?? '';
-
-    // Get JWT token for API authentication
-    const jwtToken = await getJwtToken(cookie);
-    if (!jwtToken) {
+    if (!cookie) {
       redirect(`${basePath}?error=${encodeURIComponent('Failed to authenticate with API')}`);
     }
 
     const apiHeaders = {
       'Content-Type': 'application/json',
       'X-Organization-Id': orgId,
-      Authorization: `Bearer ${jwtToken}`,
+      Cookie: cookie,
     };
 
     try {
