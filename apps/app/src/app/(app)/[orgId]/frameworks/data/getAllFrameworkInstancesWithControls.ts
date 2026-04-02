@@ -1,7 +1,7 @@
 'use server';
 
 import type { Control, PolicyStatus, RequirementMap } from '@db';
-import { db } from '@db';
+import { db } from '@db/server';
 import type { FrameworkInstanceWithControls } from '@/lib/types/framework';
 
 export async function getAllFrameworkInstancesWithControls({

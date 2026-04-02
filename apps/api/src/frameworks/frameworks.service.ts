@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, type EvidenceFormType } from '@trycompai/db';
+import { db, type EvidenceFormType } from '@db';
 import {
   getOverviewScores,
   getCurrentMember,

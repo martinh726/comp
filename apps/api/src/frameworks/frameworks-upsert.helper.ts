@@ -1,4 +1,4 @@
-import { Prisma } from '@trycompai/db';
+import { Prisma } from '@db';
 
 /**
  * Unwraps a `{ set: [...] }` wrapper that was incorrectly stored by a

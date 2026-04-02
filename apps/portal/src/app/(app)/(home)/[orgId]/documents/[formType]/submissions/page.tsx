@@ -1,6 +1,6 @@
 import { auth } from '@/app/lib/auth';
 import { env } from '@/env.mjs';
-import { db } from '@db';
+import { db } from '@db/server';
 import { Breadcrumb, PageLayout } from '@trycompai/design-system';
 import { headers as getHeaders } from 'next/headers';
 import Link from 'next/link';
@@ -69,6 +69,11 @@ export default async function PortalSubmissionsPage({
   const apiUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
   const cookie = reqHeaders.get('cookie') ?? '';
 
+  const apiHeaders = {
+    'Content-Type': 'application/json',
+    Cookie: cookie,
+  };
+
   let submissions: SubmissionRow[] = [];
 
   if (cookie) {
@@ -77,11 +82,7 @@ export default async function PortalSubmissionsPage({
         `${apiUrl}/v1/evidence-forms/my-submissions?formType=${formTypeValue}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Organization-Id': orgId,
-            Cookie: cookie,
-          },
+          headers: apiHeaders,
           cache: 'no-store',
         },
       );
