@@ -67,7 +67,7 @@ export const appAvailabilityCheck: IntegrationCheck = {
     }
 
     // Transient states where Vercel keeps the previous READY deployment serving traffic
-    const transitionalStates = new Set(['BUILDING', 'QUEUED', 'INITIALIZING', 'CANCELED']);
+    const transitionalStates = new Set(['BUILDING', 'QUEUED', 'INITIALIZING']);
 
     for (const project of projects.slice(0, 10)) {
       try {
@@ -107,8 +107,16 @@ export const appAvailabilityCheck: IntegrationCheck = {
               deploymentUrl: latestDeploy.url,
             },
           });
+        } else if (latestDeploy && latestDeploy.state === 'CANCELED') {
+          ctx.fail({
+            title: `Canceled deployment: ${project.name}`,
+            resourceType: 'project',
+            resourceId: project.id,
+            severity: 'medium',
+            description: `Latest production deployment was canceled. Previous deployment may still be serving traffic.`,
+            remediation: `Review canceled deployment and redeploy via Vercel Dashboard > ${project.name} > Deployments.`,
+          });
         } else if (latestDeploy) {
-
           ctx.fail({
             title: `Unhealthy: ${project.name}`,
             resourceType: 'project',
