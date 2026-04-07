@@ -672,6 +672,15 @@ export function CompanySubmissionWizard({
                                           if (trimmed === '.svg') return ['image/svg+xml', []];
                                           if (trimmed === '.vsdx')
                                             return ['application/vnd.visio', []];
+                                          if (trimmed === '.csv') return ['text/csv', []];
+                                          if (trimmed === '.xlsx') {
+                                            return [
+                                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                              [],
+                                            ];
+                                          }
+                                          if (trimmed === '.xls')
+                                            return ['application/vnd.ms-excel', []];
                                           return null;
                                         })
                                         .filter(
