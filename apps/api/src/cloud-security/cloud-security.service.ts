@@ -397,9 +397,9 @@ export class CloudSecurityService {
   /**
    * Save a variable to a connection (e.g., organization_id after auto-detection).
    */
-  async saveConnectionVariable(connectionId: string, key: string, value: string) {
+  async saveConnectionVariable(connectionId: string, key: string, value: string, organizationId: string) {
     const connection = await db.integrationConnection.findFirst({
-      where: { id: connectionId },
+      where: { id: connectionId, organizationId },
     });
     if (!connection) throw new ConnectionNotFoundError();
 

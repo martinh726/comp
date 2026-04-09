@@ -183,11 +183,11 @@ async function handleErrorResponse(
   step: GcpApiStep,
 ): Promise<Record<string, unknown>> {
   let errorBody: Record<string, unknown> = {};
+  const rawText = await response.text();
   try {
-    errorBody = (await response.json()) as Record<string, unknown>;
+    errorBody = JSON.parse(rawText) as Record<string, unknown>;
   } catch {
-    const text = await response.text();
-    errorBody = { message: text };
+    errorBody = { message: rawText };
   }
 
   const gcpError = errorBody.error as Record<string, unknown> | undefined;

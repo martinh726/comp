@@ -599,11 +599,12 @@ export class RemediationService {
       take: 50,
     });
 
-    const userIds = [...new Set(actions.map((a) => a.initiatedById))];
+    const userIds = [...new Set(actions.map((a) => a.initiatedById))].filter((id) => id !== 'system');
     const users = userIds.length
       ? await db.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } })
       : [];
     const userMap = new Map(users.map((u) => [u.id, u.name]));
+    userMap.set('system', 'System');
 
     return actions.map((a) => ({ ...a, initiatedByName: userMap.get(a.initiatedById) ?? null }));
   }

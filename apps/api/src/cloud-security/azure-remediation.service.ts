@@ -673,8 +673,12 @@ export class AzureRemediationService {
   private detectNeededRole(errorMessage: string): string | null {
     const lower = errorMessage.toLowerCase();
 
+    // Monitoring Contributor — 749f88d5-cbae-40b8-bcfc-e573ddc772fa (check before Contributor to prefer narrow role)
+    if (lower.includes('microsoft.insights') || lower.includes('monitor')) {
+      return '749f88d5-cbae-40b8-bcfc-e573ddc772fa';
+    }
     // Contributor (general write access) — b24988ac-6180-42a0-ab88-20f7382dd24c
-    if (lower.includes('microsoft.resources') || lower.includes('microsoft.insights') || lower.includes('microsoft.operationalinsights')) {
+    if (lower.includes('microsoft.resources') || lower.includes('microsoft.operationalinsights')) {
       return 'b24988ac-6180-42a0-ab88-20f7382dd24c'; // Contributor
     }
     // Network Contributor — 4d97b98b-1d4f-4787-a291-c67834d212e7
@@ -696,10 +700,6 @@ export class AzureRemediationService {
     // Website Contributor — de139f84-1756-47ae-9be6-808fbbe84772
     if (lower.includes('microsoft.web')) {
       return 'de139f84-1756-47ae-9be6-808fbbe84772';
-    }
-    // Monitoring Contributor — 749f88d5-cbae-40b8-bcfc-e573ddc772fa
-    if (lower.includes('microsoft.insights') || lower.includes('monitor')) {
-      return '749f88d5-cbae-40b8-bcfc-e573ddc772fa';
     }
 
     // No match — don't blindly assign Contributor

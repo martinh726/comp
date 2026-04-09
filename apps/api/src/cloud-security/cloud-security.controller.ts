@@ -202,6 +202,7 @@ export class CloudSecurityController {
           connectionId,
           'organization_id',
           organizations[0].id,
+          organizationId,
         );
       }
 
@@ -241,7 +242,7 @@ export class CloudSecurityController {
         const orgs = await this.gcpSecurityService.detectOrganizations(accessToken);
         if (orgs.length > 0) {
           orgId = orgs[0].id;
-          await this.cloudSecurityService.saveConnectionVariable(connectionId, 'organization_id', orgId);
+          await this.cloudSecurityService.saveConnectionVariable(connectionId, 'organization_id', orgId, organizationId);
         }
       }
 
@@ -305,6 +306,7 @@ export class CloudSecurityController {
             connectionId,
             'subscription_id',
             subscriptionId,
+            organizationId,
           );
           steps.push({ name: `Subscription detected: ${subscriptionName}`, success: true });
         } else {
@@ -455,7 +457,7 @@ export class CloudSecurityController {
           steps.push({
             name: 'Subscription access',
             success: false,
-            error: `Cannot access subscription. Assign "Reader" role to the app registration. (${resp.status})`,
+            error: `Cannot access subscription. Assign "Reader" role to the app registration. (${resp.status}: ${errorText.slice(0, 200)})`,
           });
         }
       } catch {
