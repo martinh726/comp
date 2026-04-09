@@ -631,7 +631,12 @@ export class RemediationService {
       throw new Error('Remediation is only supported for AWS');
     }
 
-    const finding = await db.integrationCheckResult.findFirst({ where: { id: params.checkResultId } });
+    const finding = await db.integrationCheckResult.findFirst({
+      where: {
+        id: params.checkResultId,
+        checkRun: { connectionId: params.connectionId },
+      },
+    });
     if (!finding) throw new Error('Finding not found');
 
     const credentials = await this.credentialVaultService.getDecryptedCredentials(params.connectionId);

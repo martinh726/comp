@@ -746,8 +746,11 @@ export class AzureRemediationService {
       );
     }
 
-    const checkResult = await db.integrationCheckResult.findUnique({
-      where: { id: checkResultId },
+    const checkResult = await db.integrationCheckResult.findFirst({
+      where: {
+        id: checkResultId,
+        checkRun: { connectionId },
+      },
     });
 
     if (!checkResult) {

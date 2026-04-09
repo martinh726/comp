@@ -524,7 +524,10 @@ export class GcpRemediationService {
     }
 
     const finding = await db.integrationCheckResult.findFirst({
-      where: { id: params.checkResultId },
+      where: {
+        id: params.checkResultId,
+        checkRun: { connectionId: params.connectionId },
+      },
     });
     if (!finding) throw new Error('Finding not found');
 
