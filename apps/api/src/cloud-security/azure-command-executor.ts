@@ -131,7 +131,7 @@ async function executeWithRetry(
       (code === 409 || code === 401) &&
       (err.includes('MissingSubscriptionRegistration') || err.includes('Please register the subscription') || err.includes('not registered to use namespace'));
     if (isProviderMissing && canRetry) {
-      const providerMatch = err.match(/namespace '(Microsoft\.[^']+)'/) || err.match(/with (Microsoft\.\w+)/);
+      const providerMatch = err.match(/namespace '(Microsoft\.\w+)'/) || err.match(/with (Microsoft\.\w+)/);
       if (providerMatch) {
         await registerProvider(accessToken, step.url, providerMatch[1]);
         continue;
