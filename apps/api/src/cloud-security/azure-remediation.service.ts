@@ -371,7 +371,7 @@ export class AzureRemediationService {
 
       return {
         actionId: action.id,
-        status: 'success' as const,
+        status: status as 'success' | 'unverified',
         resourceId: finding.resourceId,
         previousState,
         appliedState: { description: plan.description, verified },

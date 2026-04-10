@@ -349,10 +349,11 @@ export class GcpRemediationService {
         verified,
       };
 
+      const status = verified ? 'success' : 'unverified';
       await db.remediationAction.update({
         where: { id: action.id },
         data: {
-          status: 'success',
+          status,
           previousState: previousState as Prisma.InputJsonValue,
           appliedState: appliedState as unknown as Prisma.InputJsonValue,
           executedAt: new Date(),
@@ -364,7 +365,7 @@ export class GcpRemediationService {
 
       return {
         actionId: action.id,
-        status: 'success' as const,
+        status: status as 'success' | 'unverified',
         resourceId: finding.resourceId,
         previousState,
         appliedState,
