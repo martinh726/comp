@@ -80,13 +80,22 @@ export const cancelOnboarding = authActionClientWithoutOrg
       return { success: false, error: 'Failed to switch organization.' };
     }
 
-    // Delete the incomplete org (cascade handles related records)
+    // Delete the incomplete org (cascade handles related records).
+    // If this fails, roll back the active org switch to keep state consistent.
     try {
       await db.organization.delete({
         where: { id: parsedInput.organizationId },
       });
     } catch (error) {
       console.error('Failed to delete organization:', error);
+      try {
+        await auth.api.setActiveOrganization({
+          headers: await headers(),
+          body: { organizationId: parsedInput.organizationId },
+        });
+      } catch (rollbackError) {
+        console.error('Failed to rollback active org switch:', rollbackError);
+      }
       return { success: false, error: 'Failed to cancel onboarding.' };
     }
 
