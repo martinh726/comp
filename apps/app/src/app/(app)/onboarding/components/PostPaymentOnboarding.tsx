@@ -244,7 +244,7 @@ export function PostPaymentOnboarding({
         <div className="flex items-center gap-2 justify-end">
           <CancelOnboardingButton
             organizationId={organization.id}
-            hasOtherOrgs={hasOtherOrgs}
+            hasOtherOrgs={hasOtherOrgs && !isOnboarding && !isFinalizing}
           />
           <AnimatePresence>
             {stepIndex > 0 && (
