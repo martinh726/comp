@@ -122,14 +122,16 @@ export class CloudSecurityActivityService {
 
     // Collect unique user IDs to fetch names
     const userIds = [...new Set(actions.map((a) => a.initiatedById))];
+    const filteredUserIds = userIds.filter((id) => id !== 'system');
     const users =
-      userIds.length > 0
+      filteredUserIds.length > 0
         ? await db.user.findMany({
-            where: { id: { in: userIds } },
+            where: { id: { in: filteredUserIds } },
             select: { id: true, name: true },
           })
         : [];
     const userMap = new Map(users.map((u) => [u.id, u.name]));
+    userMap.set('system', 'System');
 
     return actions.map((action) => {
       const isRollback =
