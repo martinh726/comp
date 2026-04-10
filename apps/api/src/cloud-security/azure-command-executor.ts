@@ -224,7 +224,10 @@ async function executeOnce(
   // Success
   if (response.ok) {
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    let data: unknown = null;
+    if (text) {
+      try { data = JSON.parse(text); } catch { data = { rawBody: text }; }
+    }
     return { step, success: true, statusCode: response.status, response: data };
   }
 
