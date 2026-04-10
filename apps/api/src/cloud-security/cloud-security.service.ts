@@ -165,7 +165,7 @@ export class CloudSecurityService {
     // Security baseline: always scanned regardless of toggles.
     // Every AWS account should have these configured.
     const BASELINE_SERVICES = [
-      'cloudtrail', 'config', 'guardduty', 'iam', 'cloudwatch', 'kms',
+      'cloudtrail', 'config', 'guardduty', 'iam-analyzer', 'cloudwatch', 'kms',
     ];
 
     // Smart service filtering: auto-detect is additive, user can only exclude.
