@@ -75,7 +75,7 @@ interface BatchProgress {
   skipped: number;
   failed: number;
   findings: FindingProgress[];
-  phase: 'running' | 'scanning' | 'done' | 'cancelled';
+  phase: 'running' | 'retrying' | 'scanning' | 'waiting_for_permissions' | 'done' | 'cancelled';
 }
 
 const STATUS_CONFIG: Record<FindingStatus, { icon: typeof Check; color: string; bg: string }> = {
