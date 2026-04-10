@@ -82,7 +82,7 @@ export function OnboardingFormActions({
             type="submit"
             form="onboarding-form" // Important: links to the form in OrganizationSetupForm.tsx
             className="flex items-center gap-2"
-            disabled={isSubmitting || !isCurrentStepValid}
+            disabled={isSubmitting || isOnboarding || !isCurrentStepValid}
             data-testid="setup-finish-button"
           >
             <motion.span
