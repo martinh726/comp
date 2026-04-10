@@ -492,7 +492,7 @@ export async function executePlanSteps(params: {
             await executeAwsCommand({
               service: rbStep.service,
               command: rbStep.command,
-              input: rbStep.params,
+              input: structuredClone(rbStep.params),
               credentials: params.credentials,
               region: params.region,
               isRollback: true,
