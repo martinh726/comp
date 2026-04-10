@@ -9,7 +9,7 @@ import { getSignedUrl as _getSignedUrl } from '@aws-sdk/s3-request-presigner';
 // Workaround: bun may install duplicate @smithy/types copies causing
 // S3Client class identity mismatch with the presigner's expected type.
 // The runtime types are compatible — only the private 'handlers' property differs.
-const getSignedUrl = _getSignedUrl as (
+const getSignedUrl = _getSignedUrl as unknown as (
   client: InstanceType<typeof import('@aws-sdk/client-s3').S3Client>,
   command: import('@aws-sdk/client-s3').GetObjectCommand | import('@aws-sdk/client-s3').PutObjectCommand,
   options?: { expiresIn?: number },
