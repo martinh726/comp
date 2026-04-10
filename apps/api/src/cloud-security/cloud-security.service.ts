@@ -266,8 +266,6 @@ export class CloudSecurityService {
           const existingDetected = Array.isArray(currentVars.detectedServices)
             ? new Set(currentVars.detectedServices as string[])
             : new Set<string>();
-          // Merge: keep previously detected + add newly found
-          for (const id of serviceIds) existingDetected.add(id);
           const disabledSet = new Set(
             Array.isArray(currentVars.disabledServices) ? currentVars.disabledServices as string[] : [],
           );
@@ -275,6 +273,8 @@ export class CloudSecurityService {
           for (const id of serviceIds) {
             if (!existingDetected.has(id)) disabledSet.delete(id);
           }
+          // Merge: keep previously detected + add newly found (AFTER the new-check above)
+          for (const id of serviceIds) existingDetected.add(id);
           await db.integrationConnection.update({
             where: { id: connectionId },
             data: {

@@ -50,7 +50,7 @@ export async function executeGcpPlanSteps(params: {
   if (validationErrors.length > 0) {
     return {
       results: [],
-      error: { stepIndex: 0, step: params.steps[0]!, message: `URL validation failed: ${validationErrors.join('; ')}` },
+      error: { stepIndex: 0, step: (params.steps[0] ?? allSteps[0])!, message: `URL validation failed: ${validationErrors.join('; ')}` },
     };
   }
 
