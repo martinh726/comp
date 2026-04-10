@@ -67,7 +67,7 @@ interface ProviderFieldWithOptions extends ProviderFieldBase {
   options?: { value: string; label: string }[];
 }
 
-const PROVIDER_FIELDS: Record<'aws', ProviderFieldWithOptions[]> = {
+const PROVIDER_FIELDS: Partial<Record<'aws' | 'gcp' | 'azure', ProviderFieldWithOptions[]>> = {
   aws: [
     {
       id: 'connectionName',
@@ -173,6 +173,7 @@ export function EmptyState({
   const validateFields = (): boolean => {
     if (!selectedProvider) return false;
     const fields = PROVIDER_FIELDS[selectedProvider];
+    if (!fields) return true; // OAuth providers (GCP/Azure) don't have credential fields
     const newErrors: Record<string, string> = {};
 
     fields.forEach((field) => {
@@ -467,7 +468,7 @@ export function EmptyState({
 
   // Step 2: Connect (Form)
   if (step === 'connect' && provider) {
-    const fields = PROVIDER_FIELDS[provider.id];
+    const fields = PROVIDER_FIELDS[provider.id as keyof typeof PROVIDER_FIELDS];
 
     return (
       <PageLayout padding="default">
@@ -511,7 +512,7 @@ export function EmptyState({
             </CardHeader>
 
             <CardContent className="space-y-5">
-              {fields.map((field) => {
+              {fields?.map((field) => {
                 const stringValue: string =
                   typeof credentials[field.id] === 'string'
                     ? (credentials[field.id] as string)
