@@ -33,6 +33,8 @@ interface BrowserAutomationsListProps {
   /** When undefined, the create button is hidden (e.g., for manual tasks) */
   onCreateClick?: () => void;
   onEditClick: (automation: BrowserAutomation) => void;
+  onDelete: (automationId: string) => void;
+  onToggleEnabled: (automationId: string, enabled: boolean) => void;
 }
 
 export function BrowserAutomationsList({
@@ -42,6 +44,8 @@ export function BrowserAutomationsList({
   onRun,
   onCreateClick,
   onEditClick,
+  onDelete,
+  onToggleEnabled,
 }: BrowserAutomationsListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { hasPermission } = usePermissions();
@@ -102,6 +106,8 @@ export function BrowserAutomationsList({
               }
               onRun={() => onRun(automation.id)}
               onEdit={() => onEditClick(automation)}
+              onDelete={() => onDelete(automation.id)}
+              onToggleEnabled={(enabled) => onToggleEnabled(automation.id, enabled)}
             />
           ))}
         </div>
