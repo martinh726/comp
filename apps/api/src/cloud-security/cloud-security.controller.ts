@@ -10,6 +10,7 @@ import {
   HttpException,
   HttpStatus,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
@@ -93,6 +94,7 @@ export class CloudSecurityController {
   async scan(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
+    @Req() req: { userId?: string; authType?: string },
   ) {
 
     this.logger.log(
@@ -131,9 +133,12 @@ export class CloudSecurityController {
     const failedCount = result.findings.filter((f) => !f.passed).length;
     const passedCount = result.findings.filter((f) => f.passed).length;
 
-    await logCloudSecurityActivity({
+    // Only write audit log when we have a real userId (session auth).
+    // API key auth has no user context, and auditLog.userId is a FK to User.
+    const scanUserId = req.userId;
+    if (scanUserId) await logCloudSecurityActivity({
       organizationId,
-      userId: 'system',
+      userId: scanUserId,
       connectionId,
       action: 'scan_completed',
       description: `Ran cloud security scan — ${totalFindings} findings (${failedCount} failed, ${passedCount} passed)`,
