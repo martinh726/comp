@@ -16,8 +16,8 @@ const BROWSER_WIDTH = 1440;
 const BROWSER_HEIGHT = 900;
 
 /** Stagehand v3 requires 'provider/model' format. */
-const STAGEHAND_MODEL = 'anthropic/claude-sonnet-4-5-20250929';
-const STAGEHAND_CUA_MODEL = 'anthropic/claude-sonnet-4-5-20250929';
+const STAGEHAND_MODEL = 'anthropic/claude-sonnet-4-6';
+const STAGEHAND_CUA_MODEL = 'anthropic/claude-sonnet-4-6';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
