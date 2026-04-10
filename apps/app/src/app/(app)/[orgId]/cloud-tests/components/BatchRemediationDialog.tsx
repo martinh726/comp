@@ -58,7 +58,7 @@ interface BatchRemediationDialogProps {
   } | null;
 }
 
-type FindingStatus = 'pending' | 'fixing' | 'fixed' | 'skipped' | 'failed' | 'cancelled';
+type FindingStatus = 'pending' | 'fixing' | 'fixed' | 'needs_permissions' | 'skipped' | 'failed' | 'cancelled';
 
 interface FindingProgress {
   id: string;
