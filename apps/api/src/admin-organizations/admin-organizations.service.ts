@@ -125,7 +125,7 @@ export class AdminOrganizationsService {
           createdAt: true,
           hasAccess: true,
           onboardingCompleted: true,
-          _count: { select: { members: true } },
+          _count: { select: { members: true, tasks: true, policies: true, auditLog: true } },
           members: {
             select: {
               role: true,
@@ -185,6 +185,9 @@ export class AdminOrganizationsService {
         hasAccess: org.hasAccess,
         onboardingCompleted: org.onboardingCompleted,
         memberCount: org._count.members,
+        taskCount: org._count.tasks,
+        policyCount: org._count.policies,
+        auditLogCount: org._count.auditLog,
         owner,
         lastSession: lastSession?.toISOString() ?? null,
         lastAuditLog: lastAuditLog ? (lastAuditLog as Date).toISOString() : null,
