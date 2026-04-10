@@ -62,7 +62,9 @@ type FindingStatus = 'pending' | 'fixing' | 'fixed' | 'needs_permissions' | 'ski
 
 interface FindingProgress {
   id: string;
+  key?: string;
   title: string;
+  severity?: string;
   status: FindingStatus;
   error?: string;
   missingPermissions?: string[];
@@ -76,6 +78,7 @@ interface BatchProgress {
   failed: number;
   findings: FindingProgress[];
   phase: 'running' | 'retrying' | 'scanning' | 'waiting_for_permissions' | 'done' | 'cancelled';
+  permChecksLeft?: number;
 }
 
 const STATUS_CONFIG: Record<FindingStatus, { icon: typeof Check; color: string; bg: string }> = {
