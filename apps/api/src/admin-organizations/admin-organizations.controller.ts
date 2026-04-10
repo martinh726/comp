@@ -57,7 +57,7 @@ export class AdminOrganizationsController {
     @Query('limit') limit?: string,
   ) {
     return this.service.getOrgActivity({
-      inactiveDays: Number.isFinite(parseInt(inactiveDays ?? '90', 10)) ? parseInt(inactiveDays ?? '90', 10) : 90,
+      inactiveDays: Math.max(0, Number.isFinite(parseInt(inactiveDays ?? '90', 10)) ? parseInt(inactiveDays ?? '90', 10) : 90),
       hasAccess: hasAccess === 'true' ? true : hasAccess === 'false' ? false : undefined,
       onboarded: onboarded === 'true' ? true : onboarded === 'false' ? false : undefined,
       page: Math.max(1, parseInt(page || '1', 10) || 1),

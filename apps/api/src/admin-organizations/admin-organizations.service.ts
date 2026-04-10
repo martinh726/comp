@@ -127,6 +127,7 @@ export class AdminOrganizationsService {
           onboardingCompleted: true,
           _count: { select: { members: true, tasks: true, policies: true, auditLog: true } },
           members: {
+            where: { deactivated: false },
             select: {
               role: true,
               user: {
