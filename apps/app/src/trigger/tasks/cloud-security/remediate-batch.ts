@@ -278,10 +278,8 @@ export const remediateBatch = task({
             } else {
               progress.findings[i]!.status = retry.status;
               progress.findings[i]!.error = retry.error;
-              if (retry.status !== 'needs_permissions') {
-                progress.failed++;
-                progress.skipped--;
-              }
+              progress.failed++;
+              progress.skipped--;
             }
 
             progress.confirmedPermissions = [...confirmed];
