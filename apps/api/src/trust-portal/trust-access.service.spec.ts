@@ -7,7 +7,6 @@ jest.mock('@db', () => ({
   db: {
     trust: {
       findUnique: jest.fn(),
-      findFirst: jest.fn(),
       upsert: jest.fn(),
     },
     trustNDAAgreement: {
@@ -49,7 +48,6 @@ jest.mock('../app/s3', () => ({
 const mockDb = db as unknown as {
   trust: {
     findUnique: jest.Mock;
-    findFirst: jest.Mock;
     upsert: jest.Mock;
   };
   trustNDAAgreement: {
@@ -79,19 +77,18 @@ describe('TrustAccessService favicon branding', () => {
   });
 
   it('falls back to organizationId lookup when getPublicFavicon route id is not a friendlyUrl', async () => {
-    mockDb.trust.findUnique.mockResolvedValue(null);
-    mockDb.trust.findFirst.mockResolvedValue({
+    mockDb.trust.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
       favicon: 'org_123/trust/favicon/icon.png',
     });
     mockGetSignedUrl.mockResolvedValue('https://cdn.example.com/favicon.png');
 
     const result = await service.getPublicFavicon('org_123');
 
-    expect(mockDb.trust.findUnique).toHaveBeenCalledWith({
+    expect(mockDb.trust.findUnique).toHaveBeenNthCalledWith(1, {
       where: { friendlyUrl: 'org_123' },
       select: { favicon: true },
     });
-    expect(mockDb.trust.findFirst).toHaveBeenCalledWith({
+    expect(mockDb.trust.findUnique).toHaveBeenNthCalledWith(2, {
       where: { organizationId: 'org_123' },
       select: { favicon: true },
     });

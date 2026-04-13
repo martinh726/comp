@@ -1462,22 +1462,28 @@ export class TrustAccessService {
     });
 
     const friendlyUrl = trust?.friendlyUrl ?? organizationId;
+    const faviconUrl = trust?.favicon
+      ? await this.getFaviconSignedUrl(trust.favicon)
+      : null;
 
-    if (!trust?.favicon || !s3Client || !APP_AWS_ORG_ASSETS_BUCKET) {
-      return { friendlyUrl, faviconUrl: null };
+    return { friendlyUrl, faviconUrl };
+  }
+
+  private async getFaviconSignedUrl(
+    faviconKey: string,
+  ): Promise<string | null> {
+    if (!s3Client || !APP_AWS_ORG_ASSETS_BUCKET) {
+      return null;
     }
 
     try {
       const command = new GetObjectCommand({
         Bucket: APP_AWS_ORG_ASSETS_BUCKET,
-        Key: trust.favicon,
+        Key: faviconKey,
       });
-      const faviconUrl = await getSignedUrl(s3Client, command, {
-        expiresIn: 86400,
-      });
-      return { friendlyUrl, faviconUrl };
+      return await getSignedUrl(s3Client, command, { expiresIn: 86400 }); // 24 hours
     } catch {
-      return { friendlyUrl, faviconUrl: null };
+      return null;
     }
   }
 
@@ -2472,25 +2478,17 @@ export class TrustAccessService {
     });
 
     if (!trust) {
-      trust = await db.trust.findFirst({
+      trust = await db.trust.findUnique({
         where: { organizationId: friendlyUrl },
         select: { favicon: true },
       });
     }
 
-    if (!trust?.favicon || !s3Client || !APP_AWS_ORG_ASSETS_BUCKET) {
+    if (!trust?.favicon) {
       return null;
     }
 
-    try {
-      const command = new GetObjectCommand({
-        Bucket: APP_AWS_ORG_ASSETS_BUCKET,
-        Key: trust.favicon,
-      });
-      return await getSignedUrl(s3Client, command, { expiresIn: 86400 }); // 24 hours
-    } catch {
-      return null;
-    }
+    return this.getFaviconSignedUrl(trust.favicon);
   }
 
   async getPublicVendors(friendlyUrl: string) {
