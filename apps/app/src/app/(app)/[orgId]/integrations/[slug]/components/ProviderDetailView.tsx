@@ -1,5 +1,6 @@
 'use client';
 
+import { ConnectIntegrationDialog } from '@/components/integrations/ConnectIntegrationDialog';
 import {
   useConnectionServices,
   useIntegrationConnections,
@@ -35,10 +36,11 @@ interface ProviderDetailViewProps {
 
 export function ProviderDetailView({ provider, initialConnections }: ProviderDetailViewProps) {
   const { orgId } = useParams<{ orgId: string }>();
-  const { connections: allConnections } = useIntegrationConnections();
+  const { connections: allConnections, refresh: refreshConnections } = useIntegrationConnections();
   const { startOAuth } = useIntegrationMutations();
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [reconnectDialogOpen, setReconnectDialogOpen] = useState(false);
 
   const connections = useMemo(() => {
     const live = allConnections.filter((c) => c.providerSlug === provider.id);
@@ -158,12 +160,15 @@ export function ProviderDetailView({ provider, initialConnections }: ProviderDet
   }, [isCloudProvider, isConnected, selectedConnection?.id, refreshServices]);
 
   const handleConnect = useCallback(async () => {
-    if (provider.authType === 'oauth2' && provider.oauthConfigured) {
+    if (provider.authType === 'oauth2') {
       const redirectUrl = `${window.location.origin}/${orgId}/integrations/${provider.id}?success=true`;
       const result = await startOAuth(provider.id, redirectUrl);
       if (result?.authorizationUrl) {
         window.location.href = result.authorizationUrl;
+      } else {
+        toast.error(result.error || 'Failed to start connection');
       }
+      return;
     } else {
       // For non-OAuth, show the inline add-account form
       setShowAddAccount(true);
@@ -202,7 +207,7 @@ export function ProviderDetailView({ provider, initialConnections }: ProviderDet
                 This connection was created before {CLOUD_RECONNECT_CUTOFF_LABEL}. Reconnect it to keep scans and remediation fully reliable.
               </p>
             </div>
-            <Button size="sm" variant="outline" onClick={() => void handleConnect()}>
+            <Button size="sm" variant="outline" onClick={() => setReconnectDialogOpen(true)}>
               Reconnect
             </Button>
           </div>
@@ -274,6 +279,22 @@ export function ProviderDetailView({ provider, initialConnections }: ProviderDet
           orgId={orgId}
           onConnected={() => setShowAddAccount(false)}
           onOAuthConnect={handleConnect}
+        />
+      )}
+
+      {selectedConnectionRequiresReconnect && (
+        <ConnectIntegrationDialog
+          open={reconnectDialogOpen}
+          onOpenChange={setReconnectDialogOpen}
+          integrationId={provider.id}
+          integrationName={provider.name}
+          integrationLogoUrl={provider.logoUrl}
+          initialView="list"
+          onConnected={() => {
+            setReconnectDialogOpen(false);
+            setShowAddAccount(false);
+            refreshConnections();
+          }}
         />
       )}
     </>
