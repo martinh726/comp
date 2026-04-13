@@ -54,4 +54,14 @@ describe('requiresCloudReconnect', () => {
       }),
     ).toBe(false);
   });
+
+  it('returns true for legacy cloud connections', () => {
+    expect(
+      requiresCloudReconnect({
+        providerId: 'aws',
+        isLegacy: true,
+        status: 'active',
+      }),
+    ).toBe(true);
+  });
 });

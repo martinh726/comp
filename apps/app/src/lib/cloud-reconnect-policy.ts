@@ -18,11 +18,13 @@ type ReconnectCandidate = {
 
 export function requiresCloudReconnect(candidate: ReconnectCandidate): boolean {
   if (!CLOUD_RECONNECT_PROVIDER_IDS.has(candidate.providerId)) return false;
-  if (candidate.isLegacy) return false;
 
   if (candidate.status && candidate.status !== 'active' && candidate.status !== 'pending') {
     return false;
   }
+
+  // Legacy cloud connections come from the old integration table and should be re-added.
+  if (candidate.isLegacy) return true;
 
   if (!candidate.createdAt) return false;
 
