@@ -25,6 +25,16 @@ describe('requiresCloudReconnect', () => {
     ).toBe(false);
   });
 
+  it('returns true for cloud connections created earlier on the rollout day', () => {
+    expect(
+      requiresCloudReconnect({
+        providerId: 'gcp',
+        createdAt: '2026-04-13T15:00:00.000Z',
+        status: 'active',
+      }),
+    ).toBe(true);
+  });
+
   it('returns false for cloud connections created after the cutoff date', () => {
     expect(
       requiresCloudReconnect({
@@ -53,5 +63,15 @@ describe('requiresCloudReconnect', () => {
         status: 'active',
       }),
     ).toBe(false);
+  });
+
+  it('returns true for legacy cloud connections', () => {
+    expect(
+      requiresCloudReconnect({
+        providerId: 'aws',
+        isLegacy: true,
+        status: 'active',
+      }),
+    ).toBe(true);
   });
 });
