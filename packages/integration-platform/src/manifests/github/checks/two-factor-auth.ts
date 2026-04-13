@@ -18,9 +18,6 @@ interface GitHubOrgMember {
   html_url: string;
 }
 
-const MAX_USERNAMES_IN_DESCRIPTION = 20;
-const MAX_USERNAMES_IN_EVIDENCE = 100;
-
 const getHttpStatus = (error: unknown): number | null => {
   if (
     typeof error === 'object' &&
@@ -72,15 +69,8 @@ const isRateLimitError = (error: unknown, errorMsg: string): boolean => {
   );
 };
 
-const formatUsernamesPreview = (members: GitHubOrgMember[]): string => {
-  const preview = members.slice(0, MAX_USERNAMES_IN_DESCRIPTION).map((member) => `@${member.login}`);
-  const remaining = members.length - preview.length;
-
-  if (remaining > 0) {
-    return `${preview.join(', ')} and ${remaining} more`;
-  }
-  return preview.join(', ');
-};
+const formatUsernames = (members: GitHubOrgMember[]): string =>
+  members.map((member) => `@${member.login}`).join(', ');
 
 export const twoFactorAuthCheck: IntegrationCheck = {
   id: 'two_factor_auth',
@@ -237,7 +227,7 @@ export const twoFactorAuthCheck: IntegrationCheck = {
         // Also emit a summary
         ctx.fail({
           title: `${without2FACount} member(s) without 2FA in ${org.login}`,
-          description: `${without2FACount} member(s) in the ${org.login} organization do not have two-factor authentication enabled: ${formatUsernamesPreview(membersWithout2FA)}`,
+          description: `${without2FACount} member(s) in the ${org.login} organization do not have two-factor authentication enabled: ${formatUsernames(membersWithout2FA)}`,
           resourceType: 'organization',
           resourceId: `${org.login}/2fa-summary`,
           severity: 'high',
@@ -245,10 +235,7 @@ export const twoFactorAuthCheck: IntegrationCheck = {
           evidence: {
             organization: org.login,
             membersWithout2FA: without2FACount,
-            sampleUsernames: membersWithout2FA
-              .slice(0, MAX_USERNAMES_IN_EVIDENCE)
-              .map((member) => member.login),
-            usernamesTruncated: membersWithout2FA.length > MAX_USERNAMES_IN_EVIDENCE,
+            usernames: membersWithout2FA.map((member) => member.login),
             checkedAt,
           },
         });
