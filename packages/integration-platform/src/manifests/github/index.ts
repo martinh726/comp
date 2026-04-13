@@ -9,6 +9,7 @@ import type { IntegrationManifest } from '../../types';
 import { branchProtectionCheck } from './checks/branch-protection';
 import { dependabotCheck } from './checks/dependabot';
 import { sanitizedInputsCheck } from './checks/sanitized-inputs';
+import { twoFactorAuthCheck } from './checks/two-factor-auth';
 
 export const manifest: IntegrationManifest = {
   id: 'github',
@@ -31,7 +32,7 @@ export const manifest: IntegrationManifest = {
     config: {
       authorizeUrl: 'https://github.com/login/oauth/authorize',
       tokenUrl: 'https://github.com/login/oauth/access_token',
-      scopes: ['read:org', 'repo', 'read:user'],
+      scopes: ['admin:org', 'repo', 'read:user'],
       pkce: false,
       clientAuthMethod: 'body',
       revoke: {
@@ -81,7 +82,7 @@ export const manifest: IntegrationManifest = {
   ],
 
   // Compliance checks that run daily and can auto-complete tasks
-  checks: [branchProtectionCheck, dependabotCheck, sanitizedInputsCheck],
+  checks: [branchProtectionCheck, dependabotCheck, sanitizedInputsCheck, twoFactorAuthCheck],
 
   isActive: true,
 };
