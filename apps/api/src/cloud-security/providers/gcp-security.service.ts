@@ -326,6 +326,7 @@ export class GCPSecurityService {
     projectId: string;
   }): Promise<GcpSetupStep> {
     const { stepDef, accessToken, projectId } = params;
+    const actionUrl = this.getApiConsoleUrl(stepDef.api, projectId);
 
     try {
       const resp = await fetch(
@@ -345,22 +346,45 @@ export class GCPSecurityService {
           id: stepDef.id,
           name: stepDef.name,
           success: true,
-          actionUrl: stepDef.actionUrl,
+          actionUrl,
           actionText: stepDef.actionText,
           requiredForScan: stepDef.requiredForScan,
         };
       }
 
       const rawError = await resp.text();
+      const message = this.getEnableApiErrorMessage(stepDef.api, rawError);
+      const isPermissionError = /permission denied|does not have permission|forbidden|PERMISSION_DENIED/i.test(
+        message,
+      );
+
+      if (isPermissionError) {
+        const alreadyEnabled = await this.isApiAlreadyEnabled(
+          accessToken,
+          projectId,
+          stepDef.api,
+        );
+        if (alreadyEnabled) {
+          return {
+            id: stepDef.id,
+            name: stepDef.name,
+            success: true,
+            actionUrl,
+            actionText: stepDef.actionText,
+            requiredForScan: stepDef.requiredForScan,
+          };
+        }
+      }
+
       return {
         id: stepDef.id,
         name: stepDef.name,
         success: false,
-        error: this.getEnableApiErrorMessage(stepDef.api, rawError),
-        actionUrl: stepDef.actionUrl,
+        error: message,
+        actionUrl,
         actionText: stepDef.actionText,
         requiredForScan: stepDef.requiredForScan,
-        adminActions: this.buildEnableApiAdminActions(stepDef, projectId, rawError),
+        adminActions: this.buildEnableApiAdminActions(stepDef, projectId, rawError, actionUrl),
       };
     } catch (err) {
       const rawError = err instanceof Error ? err.message : String(err);
@@ -369,10 +393,10 @@ export class GCPSecurityService {
         name: stepDef.name,
         success: false,
         error: this.getEnableApiErrorMessage(stepDef.api, rawError),
-        actionUrl: stepDef.actionUrl,
+        actionUrl,
         actionText: stepDef.actionText,
         requiredForScan: stepDef.requiredForScan,
-        adminActions: this.buildEnableApiAdminActions(stepDef, projectId, rawError),
+        adminActions: this.buildEnableApiAdminActions(stepDef, projectId, rawError, actionUrl),
       };
     }
   }
@@ -515,9 +539,14 @@ export class GCPSecurityService {
     stepDef: (typeof REQUIRED_GCP_API_STEPS)[number],
     projectId: string,
     rawError?: string,
+    actionUrl?: string,
   ): GcpSetupAdminAction[] {
     const actions: GcpSetupAdminAction[] = [
-      { kind: 'link', label: stepDef.actionText, url: stepDef.actionUrl },
+      {
+        kind: 'link',
+        label: stepDef.actionText,
+        url: actionUrl ?? this.getApiConsoleUrl(stepDef.api, projectId),
+      },
       {
         kind: 'command',
         label: `Copy: enable ${stepDef.api}`,
@@ -537,6 +566,35 @@ export class GCPSecurityService {
     }
 
     return actions;
+  }
+
+  private getApiConsoleUrl(apiName: string, projectId: string): string {
+    return `https://console.cloud.google.com/apis/library/${apiName}?project=${encodeURIComponent(projectId)}`;
+  }
+
+  private async isApiAlreadyEnabled(
+    accessToken: string,
+    projectId: string,
+    apiName: string,
+  ): Promise<boolean> {
+    try {
+      const resp = await fetch(
+        `https://serviceusage.googleapis.com/v1/projects/${projectId}/services/${apiName}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (!resp.ok) return false;
+
+      const data = (await resp.json()) as { state?: string };
+      return data.state === 'ENABLED';
+    } catch {
+      return false;
+    }
   }
 
   private buildFindingsViewerAdminActions(params: {
