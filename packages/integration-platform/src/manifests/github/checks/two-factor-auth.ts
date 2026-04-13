@@ -21,20 +21,55 @@ interface GitHubOrgMember {
 const MAX_USERNAMES_IN_DESCRIPTION = 20;
 const MAX_USERNAMES_IN_EVIDENCE = 100;
 
-const isOwnerPermissionError = (errorMsg: string): boolean => {
+const getHttpStatus = (error: unknown): number | null => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+  ) {
+    return (error as { status: number }).status;
+  }
+  return null;
+};
+
+const isOwnerPermissionError = (error: unknown, errorMsg: string): boolean => {
+  const status = getHttpStatus(error);
   const lower = errorMsg.toLowerCase();
 
-  if (lower.includes('403') || lower.includes('forbidden')) return true;
+  // GitHub documents 422 when 2fa_* filters are used in unsupported contexts.
+  if (status === 422) return true;
+
   if (lower.includes('must be an organization owner') || lower.includes('organization owners')) {
     return true;
   }
 
-  // GitHub documents 422 for this endpoint when filter constraints fail.
-  if (lower.includes('422') || lower.includes('unprocessable') || lower.includes('validation failed')) {
+  if (
+    lower.includes('422') ||
+    lower.includes('unprocessable') ||
+    lower.includes('validation failed')
+  ) {
     return true;
   }
 
   return false;
+};
+
+const isSamlSsoError = (errorMsg: string): boolean => {
+  const lower = errorMsg.toLowerCase();
+  return lower.includes('saml') || lower.includes('single sign-on') || lower.includes('sso');
+};
+
+const isRateLimitError = (error: unknown, errorMsg: string): boolean => {
+  const status = getHttpStatus(error);
+  const lower = errorMsg.toLowerCase();
+
+  return (
+    status === 429 ||
+    lower.includes('rate limit') ||
+    lower.includes('abuse detection') ||
+    (status === 403 && lower.includes('secondary rate limit'))
+  );
 };
 
 const formatUsernamesPreview = (members: GitHubOrgMember[]): string => {
@@ -106,8 +141,37 @@ export const twoFactorAuthCheck: IntegrationCheck = {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
 
+        if (isSamlSsoError(errorMsg)) {
+          ctx.warn(`Cannot check 2FA for ${org.login}: SSO authorization is required.`);
+          ctx.fail({
+            title: `Cannot verify 2FA for ${org.login}`,
+            description:
+              'GitHub organization SSO authorization is required to access organization members.',
+            resourceType: 'organization',
+            resourceId: org.login,
+            severity: 'medium',
+            remediation:
+              'Authorize this OAuth app for your organization SSO, then rerun the check.',
+          });
+          continue;
+        }
+
+        if (isRateLimitError(error, errorMsg)) {
+          ctx.warn(`Rate limit reached while checking 2FA for ${org.login}.`);
+          ctx.fail({
+            title: `Rate limited while checking ${org.login}`,
+            description:
+              'GitHub rate limits prevented completion of this 2FA check for the organization.',
+            resourceType: 'organization',
+            resourceId: org.login,
+            severity: 'low',
+            remediation: 'Wait for the GitHub rate limit to reset, then rerun the check.',
+          });
+          continue;
+        }
+
         // GitHub returns 422 when the caller is not an org owner for 2fa_* filters.
-        if (isOwnerPermissionError(errorMsg)) {
+        if (isOwnerPermissionError(error, errorMsg)) {
           ctx.warn(
             `Cannot check 2FA for ${org.login}: the account must be an organization owner to use the 2FA filter.`,
           );
