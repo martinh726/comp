@@ -296,7 +296,43 @@ function CredentialSetup({
   const [credentials, setCredentials] = useState<Record<string, string | string[]>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const fields = provider.credentialFields ?? [];
+  const fields = useMemo(() => {
+    const configuredFields = provider.credentialFields ?? [];
+
+    if (provider.authType === 'basic' && configuredFields.length === 0) {
+      return [
+        {
+          id: 'username',
+          label: 'Username',
+          type: 'text' as const,
+          required: true,
+          placeholder: 'Enter username',
+        },
+        {
+          id: 'password',
+          label: 'Password',
+          type: 'password' as const,
+          required: true,
+          placeholder: 'Enter password',
+        },
+      ];
+    }
+
+    if (provider.authType === 'api_key' && configuredFields.length === 0) {
+      return [
+        {
+          id: 'api_key',
+          label: 'API Key',
+          type: 'password' as const,
+          required: true,
+          placeholder: 'Enter your API key',
+        },
+      ];
+    }
+
+    return configuredFields;
+  }, [provider.authType, provider.credentialFields]);
+  const hasConfigurableFields = fields.length > 0;
 
   const updateCredential = (fieldId: string, value: string | string[]) => {
     setCredentials((prev) => ({ ...prev, [fieldId]: value }));
@@ -310,6 +346,11 @@ function CredentialSetup({
   };
 
   const handleConnect = useCallback(async () => {
+    if (!hasConfigurableFields) {
+      toast.error('This integration setup is not configured yet.');
+      return;
+    }
+
     const newErrors: Record<string, string> = {};
     for (const field of fields) {
       const value = credentials[field.id];
@@ -340,7 +381,7 @@ function CredentialSetup({
     } finally {
       setConnecting(false);
     }
-  }, [fields, credentials, createConnection, provider, onConnected]);
+  }, [fields, credentials, createConnection, hasConfigurableFields, provider, onConnected]);
 
   return (
     <div className="py-6 space-y-6">
@@ -355,21 +396,41 @@ function CredentialSetup({
         {/* Main form */}
         <div className="rounded-xl border bg-background shadow-sm">
           <div className="p-6 space-y-4">
-            {fields.map((field) => (
-              <FieldRow
-                key={field.id}
-                field={field}
-                value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
-                error={errors[field.id]}
-                onChange={(v) => updateCredential(field.id, v)}
-              />
-            ))}
+            {hasConfigurableFields ? (
+              fields.map((field) => (
+                <FieldRow
+                  key={field.id}
+                  field={field}
+                  value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
+                  error={errors[field.id]}
+                  onChange={(v) => updateCredential(field.id, v)}
+                />
+              ))
+            ) : (
+              <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                Setup fields are not configured for this integration yet.
+                {provider.docsUrl ? (
+                  <>
+                    {' '}
+                    <a
+                      href={provider.docsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Open docs
+                    </a>
+                    .
+                  </>
+                ) : null}
+              </div>
+            )}
           </div>
           <div className="border-t bg-muted/30 px-6 py-5 rounded-b-xl">
-            <Button onClick={handleConnect} disabled={connecting} loading={connecting}>
-              {connecting ? 'Connecting...' : (
+            <Button onClick={handleConnect} disabled={connecting || !hasConfigurableFields} loading={connecting}>
+              {connecting ? 'Connecting...' : !hasConfigurableFields ? 'Setup unavailable' : (
                 <>
-                  Connect
+                  Connect account
                   <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                 </>
               )}
