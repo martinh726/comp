@@ -11,7 +11,7 @@ import {
   GetObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl } from '@/app/s3';
 import { db } from '@db';
 import {
   DomainStatusResponseDto,

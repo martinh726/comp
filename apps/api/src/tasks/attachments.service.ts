@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getSignedUrl } from '@/app/s3';
 import { AttachmentEntityType, AttachmentType } from '@db';
 import {
   BadRequestException,
