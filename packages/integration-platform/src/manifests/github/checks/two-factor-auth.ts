@@ -136,31 +136,16 @@ export const twoFactorAuthCheck: IntegrationCheck = {
         continue;
       }
 
-      // Step 3: Also fetch total member count for context
-      let totalCount: number | null = null;
-      try {
-        const totalMembers = await ctx.fetchAllPages<GitHubOrgMember>(`/orgs/${orgSlug}/members`);
-        totalCount = totalMembers.length;
-      } catch (error) {
-        // Non-critical: we can still report 2FA findings without total count
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        ctx.warn(`Could not fetch total member count for ${org.login}: ${errorMsg}`);
-      }
-
       const without2FACount = membersWithout2FA.length;
 
       if (without2FACount === 0) {
         ctx.pass({
           title: `All members have 2FA enabled in ${org.login}`,
-          description:
-            typeof totalCount === 'number' && totalCount > 0
-              ? `All ${totalCount} members of the ${org.login} organization have two-factor authentication enabled.`
-              : `No members without 2FA were returned for ${org.login}.`,
+          description: `No members without 2FA were returned for ${org.login}.`,
           resourceType: 'organization',
           resourceId: org.login,
           evidence: {
             organization: org.login,
-            totalMembers: totalCount,
             membersWithout2FA: 0,
             checkedAt,
           },
@@ -188,14 +173,13 @@ export const twoFactorAuthCheck: IntegrationCheck = {
         // Also emit a summary
         ctx.fail({
           title: `${without2FACount} member(s) without 2FA in ${org.login}`,
-          description: `${without2FACount} out of ${totalCount ?? 'unknown'} members in the ${org.login} organization do not have two-factor authentication enabled: ${formatUsernamesPreview(membersWithout2FA)}`,
+          description: `${without2FACount} member(s) in the ${org.login} organization do not have two-factor authentication enabled: ${formatUsernamesPreview(membersWithout2FA)}`,
           resourceType: 'organization',
           resourceId: `${org.login}/2fa-summary`,
           severity: 'high',
           remediation: `1. Go to https://github.com/organizations/${org.login}/settings/security\n2. Under "Authentication security", check "Require two-factor authentication for everyone"\n3. This will require all existing and future members to enable 2FA`,
           evidence: {
             organization: org.login,
-            totalMembers: totalCount,
             membersWithout2FA: without2FACount,
             sampleUsernames: membersWithout2FA
               .slice(0, MAX_USERNAMES_IN_EVIDENCE)
