@@ -61,7 +61,9 @@ describe('GcpSetupGuide', () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByText('Some steps need manual setup:')).toBeInTheDocument(),
+      expect(
+        screen.getByText('Some required setup steps need manual action:'),
+      ).toBeInTheDocument(),
     );
 
     expect(

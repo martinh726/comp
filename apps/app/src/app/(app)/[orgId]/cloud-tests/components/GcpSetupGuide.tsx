@@ -19,6 +19,7 @@ interface SetupStep {
   error?: string;
   actionUrl?: string;
   actionText?: string;
+  requiredForScan?: boolean;
 }
 
 const AUTO_FIX_ROLES = [
@@ -86,6 +87,9 @@ export function GcpSetupGuide({
 
   const allStepsSucceeded = setupResult?.steps.every((s) => s.success);
   const failedSteps = setupResult?.steps.filter((s) => !s.success) ?? [];
+  const failedRequiredSteps = failedSteps.filter((step) => step.requiredForScan !== false);
+  const failedOptionalSteps = failedSteps.filter((step) => step.requiredForScan === false);
+  const hasBlockingFailures = failedRequiredSteps.length > 0;
   const failedActionableSteps = failedSteps.filter(
     (step) => step.actionUrl && step.actionText,
   );
@@ -128,6 +132,7 @@ export function GcpSetupGuide({
                 key={step.id}
                 done={step.success}
                 failed={!step.success}
+                optional={!step.success && step.requiredForScan === false}
                 label={step.name}
                 error={step.error}
               />
@@ -137,15 +142,37 @@ export function GcpSetupGuide({
 
         {/* Manual fallback for failed steps */}
         {setupResult && !allStepsSucceeded && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-800/50 dark:bg-amber-950/20">
-            <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-2">
-              Some steps need manual setup:
+          <div
+            className={`rounded-lg border p-3 ${
+              hasBlockingFailures
+                ? 'border-amber-200 bg-amber-50/50 dark:border-amber-800/50 dark:bg-amber-950/20'
+                : 'border-primary/20 bg-primary/[0.05] dark:border-primary/30 dark:bg-primary/[0.1]'
+            }`}
+          >
+            <p
+              className={`mb-2 text-xs font-medium ${
+                hasBlockingFailures
+                  ? 'text-amber-800 dark:text-amber-300'
+                  : 'text-primary'
+              }`}
+            >
+              {hasBlockingFailures
+                ? 'Some required setup steps need manual action:'
+                : 'Scan can still work. The remaining steps are optional for auto-setup:'}
             </p>
             <div className="space-y-1.5">
               {failedActionableSteps.length > 0 ? (
                 failedActionableSteps.map((step) => (
                   <div key={step.id} className="flex items-center justify-between">
-                    <span className="text-xs text-amber-700 dark:text-amber-400">{step.name}</span>
+                    <span
+                      className={`text-xs ${
+                        step.requiredForScan === false
+                          ? 'text-primary/80'
+                          : 'text-amber-700 dark:text-amber-400'
+                      }`}
+                    >
+                      {step.name}
+                    </span>
                     <a
                       href={step.actionUrl}
                       target="_blank"
@@ -157,11 +184,24 @@ export function GcpSetupGuide({
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  Fix the failed permissions in your GCP console, then retry setup.
+                <p
+                  className={`text-xs ${
+                    hasBlockingFailures
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-primary/80'
+                  }`}
+                >
+                  {hasBlockingFailures
+                    ? 'Fix the required permissions in your GCP console, then retry setup.'
+                    : 'Optional setup steps can be skipped if scanning already works.'}
                 </p>
               )}
             </div>
+            {!hasBlockingFailures && failedOptionalSteps.length > 0 && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Optional steps improve automatic setup and future onboarding, but they are not required for reading findings.
+              </p>
+            )}
           </div>
         )}
 
@@ -182,7 +222,11 @@ export function GcpSetupGuide({
               disabled={isScanning}
               className="w-full rounded-lg border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
             >
-              {isScanning ? 'Scanning...' : 'Try Scanning Anyway'}
+              {isScanning
+                ? 'Scanning...'
+                : hasBlockingFailures
+                  ? 'Try Scanning Anyway'
+                  : 'Run Scan'}
             </button>
           </div>
         )}
@@ -215,11 +259,13 @@ export function GcpSetupGuide({
 function StepRow({
   done,
   failed,
+  optional,
   label,
   error,
 }: {
   done?: boolean;
   failed?: boolean;
+  optional?: boolean;
   label: string;
   error?: string;
 }) {
@@ -229,20 +275,32 @@ function StepRow({
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${
           done
             ? 'bg-primary/10'
-            : failed
+            : optional
+              ? 'bg-amber-100 dark:bg-amber-900/30'
+              : failed
               ? 'bg-red-100 dark:bg-red-900/30'
               : 'border border-muted-foreground/30'
         }`}
       >
         {done && <Check className="h-3 w-3 text-primary" />}
-        {failed && <X className="h-3 w-3 text-red-500" />}
+        {failed && <X className={`h-3 w-3 ${optional ? 'text-amber-600' : 'text-red-500'}`} />}
       </div>
       <div>
-        <p className={`text-sm ${done ? 'text-muted-foreground' : failed ? 'text-foreground' : 'font-medium'}`}>
+        <p
+          className={`text-sm ${
+            done
+              ? 'text-muted-foreground'
+              : optional
+                ? 'text-amber-800 dark:text-amber-300'
+                : failed
+                  ? 'text-foreground'
+                  : 'font-medium'
+          }`}
+        >
           {label}
         </p>
         {error && (
-          <p className="text-[11px] text-red-500 mt-0.5">{error}</p>
+          <p className={`mt-0.5 text-[11px] ${optional ? 'text-amber-700 dark:text-amber-400' : 'text-red-500'}`}>{error}</p>
         )}
       </div>
     </div>

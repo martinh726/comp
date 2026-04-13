@@ -164,6 +164,7 @@ type GcpSetupStep = {
   error?: string;
   actionUrl?: string;
   actionText?: string;
+  requiredForScan: boolean;
 };
 
 const REQUIRED_GCP_API_STEPS: Array<{
@@ -172,6 +173,7 @@ const REQUIRED_GCP_API_STEPS: Array<{
   name: string;
   actionUrl: string;
   actionText: string;
+  requiredForScan: boolean;
 }> = [
   {
     id: 'enable_security_command_center_api',
@@ -180,6 +182,7 @@ const REQUIRED_GCP_API_STEPS: Array<{
     actionUrl:
       'https://console.cloud.google.com/apis/library/securitycenter.googleapis.com',
     actionText: 'Open API',
+    requiredForScan: true,
   },
   {
     id: 'enable_cloud_resource_manager_api',
@@ -188,6 +191,7 @@ const REQUIRED_GCP_API_STEPS: Array<{
     actionUrl:
       'https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com',
     actionText: 'Open API',
+    requiredForScan: false,
   },
   {
     id: 'enable_service_usage_api',
@@ -196,12 +200,14 @@ const REQUIRED_GCP_API_STEPS: Array<{
     actionUrl:
       'https://console.cloud.google.com/apis/library/serviceusage.googleapis.com',
     actionText: 'Open API',
+    requiredForScan: false,
   },
 ];
 
 const FINDINGS_VIEWER_ACTION = {
   actionUrl: 'https://console.cloud.google.com/iam-admin/iam',
   actionText: 'Open IAM',
+  requiredForScan: true,
 };
 
 @Injectable()
@@ -259,6 +265,7 @@ export class GCPSecurityService {
             success: true,
             actionUrl: stepDef.actionUrl,
             actionText: stepDef.actionText,
+            requiredForScan: stepDef.requiredForScan,
           });
         } else {
           const err = await resp.text();
@@ -269,6 +276,7 @@ export class GCPSecurityService {
             error: this.getEnableApiErrorMessage(stepDef.api, err),
             actionUrl: stepDef.actionUrl,
             actionText: stepDef.actionText,
+            requiredForScan: stepDef.requiredForScan,
           });
         }
       } catch (err) {
@@ -282,6 +290,7 @@ export class GCPSecurityService {
               : this.getEnableApiErrorMessage(stepDef.api, String(err)),
           actionUrl: stepDef.actionUrl,
           actionText: stepDef.actionText,
+          requiredForScan: stepDef.requiredForScan,
         });
       }
     }
