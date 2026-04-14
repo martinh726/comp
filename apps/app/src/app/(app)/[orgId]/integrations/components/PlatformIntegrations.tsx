@@ -279,12 +279,8 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
         return a.provider.name.localeCompare(b.provider.name);
       });
 
-    const customIntegrations: UnifiedIntegration[] = INTEGRATIONS.map((integration) => ({
-      type: 'custom' as const,
-      integration,
-    }));
-
-    const allIntegrations = [...platformIntegrations, ...customIntegrations];
+    // AI Agent integrations are hidden — they are not real integrations
+    const allIntegrations = [...platformIntegrations];
     if (vendorNames.size === 0) {
       return allIntegrations;
     }
