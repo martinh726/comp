@@ -602,14 +602,16 @@ interface ConnectionServicesMeta {
   detectionCompletedAt?: string | null;
 }
 
+interface ConnectionServicesResponse {
+  services: ConnectionServiceItem[];
+  meta?: ConnectionServicesMeta;
+}
+
 export function useConnectionServices(connectionId: string | null) {
-  const { data, error, isLoading, mutate } = useSWR<{
-    services: ConnectionServiceItem[];
-    meta?: ConnectionServicesMeta;
-  }>(
+  const { data, error, isLoading, mutate } = useSWR<ConnectionServicesResponse>(
     connectionId ? ['connection-services', connectionId] : null,
     async () => {
-      const response = await api.get<{ services: ConnectionServiceItem[] }>(
+      const response = await api.get<ConnectionServicesResponse>(
         `/v1/integrations/connections/${connectionId}/services`,
       );
       if (response.error) {
