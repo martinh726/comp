@@ -32,7 +32,7 @@ interface ExecuteResult {
 
 export const remediateSingle = task({
   id: 'remediate-single',
-  maxDuration: 1000 * 60 * 5,
+  maxDuration: 60 * 5, // 5 minutes (seconds, not ms)
   retry: { maxAttempts: 1 },
   run: async (payload: {
     connectionId: string;
