@@ -29,6 +29,29 @@ export function MetricsSection({
   const successRateColor = successRate >= 90 ? 'text-primary' : successRate >= 60 ? 'text-warning' : 'text-destructive';
   const latestRun = initialRuns[0];
 
+  // Automations run daily at 09:00 UTC (see
+  // comp-private/apps/enterprise-api/src/trigger/automation/run-automations-schedule.ts).
+  // Render the schedule explicitly in UTC and the next run in the user's
+  // local timezone so the label matches when it actually fires.
+  const nextRun = useMemo(() => {
+    const now = new Date();
+    const next = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        9,
+        0,
+        0,
+        0,
+      ),
+    );
+    if (next.getTime() <= now.getTime()) {
+      next.setUTCDate(next.getUTCDate() + 1);
+    }
+    return next;
+  }, []);
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 divide-x border-y py-4">
       <div className="px-4">
@@ -41,12 +64,19 @@ export function MetricsSection({
 
       <div className="px-4">
         <p className="text-xs text-muted-foreground mb-1">Schedule</p>
-        <p className="text-sm font-medium">Every Day 9:00 AM</p>
+        <p className="text-sm font-medium">Every day at 9:00 AM UTC</p>
       </div>
 
       <div className="px-4">
         <p className="text-xs text-muted-foreground mb-1">Next Run</p>
-        <p className="text-sm font-medium">Tomorrow 9:00 AM</p>
+        <p className="text-sm font-medium">
+          {nextRun.toLocaleString(undefined, {
+            weekday: 'short',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })}
+        </p>
       </div>
 
       <div className="px-4">
