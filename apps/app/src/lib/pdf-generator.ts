@@ -271,13 +271,13 @@ const processContent = (config: PDFConfig, content: JSONContent[], level: number
             if (listItem.type === 'listItem' && listItem.content) {
               const listText = extractTextFromContent(listItem.content);
               checkPageBreak(config);
-              
+
               // Add number with consistent font
               config.doc.setFontSize(config.defaultFontSize);
               config.doc.setFont('helvetica', 'normal');
               config.doc.setTextColor(0, 0, 0); // Ensure number is black
               config.doc.text(`${itemNumber}.`, config.margin + level * 10, config.yPosition);
-              
+
               // Add indented text with proper font reset
               config.doc.setFontSize(config.defaultFontSize);
               config.doc.setFont('helvetica', 'normal');
@@ -295,8 +295,101 @@ const processContent = (config: PDFConfig, content: JSONContent[], level: number
           }
         }
         break;
+
+      case 'table':
+        renderTable(config, item);
+        break;
     }
   }
+};
+
+// Render a Tiptap table node as a jsPDF grid with borders and header fill.
+// NOTE: Keep in sync with apps/api/src/trust-portal/policy-pdf-renderer.service.ts renderTable
+const renderTable = (config: PDFConfig, tableNode: JSONContent) => {
+  const rows = tableNode.content;
+  if (!rows || rows.length === 0) return;
+
+  const firstRow = rows[0];
+  if (!firstRow.content || firstRow.content.length === 0) return;
+
+  let columnCount = 0;
+  for (const cell of firstRow.content) {
+    columnCount += cell.attrs?.colspan ?? 1;
+  }
+  if (columnCount === 0) return;
+
+  const colWidth = config.contentWidth / columnCount;
+  const cellPadding = 2;
+  const minCellHeight = config.lineHeight + cellPadding * 2;
+
+  config.doc.setFontSize(config.defaultFontSize);
+
+  for (const row of rows) {
+    if (row.type !== 'tableRow' || !row.content) continue;
+
+    const cellsInRow: Array<{
+      isHeader: boolean;
+      lines: string[];
+      width: number;
+    }> = [];
+
+    for (const cell of row.content) {
+      if (cell.type !== 'tableCell' && cell.type !== 'tableHeader') continue;
+      const isHeader = cell.type === 'tableHeader';
+      const colspan = cell.attrs?.colspan ?? 1;
+      const width = colWidth * colspan;
+      const rawText = cell.content ? extractTextFromContent(cell.content) : '';
+      const cleanText = cleanTextForPDF(rawText);
+      const lines = config.doc.splitTextToSize(
+        cleanText || ' ',
+        width - cellPadding * 2,
+      ) as string[];
+      cellsInRow.push({ isHeader, lines, width });
+    }
+
+    if (cellsInRow.length === 0) continue;
+
+    const rowHeight = Math.max(
+      minCellHeight,
+      ...cellsInRow.map(
+        (c) => c.lines.length * config.lineHeight + cellPadding * 2,
+      ),
+    );
+
+    checkPageBreak(config, rowHeight);
+
+    const rowY = config.yPosition;
+    let xOffset = 0;
+    for (const cell of cellsInRow) {
+      const x = config.margin + xOffset;
+
+      if (cell.isHeader) {
+        config.doc.setFillColor(240, 240, 240);
+        config.doc.rect(x, rowY, cell.width, rowHeight, 'F');
+      }
+
+      config.doc.setDrawColor(180, 180, 180);
+      config.doc.setLineWidth(0.2);
+      config.doc.rect(x, rowY, cell.width, rowHeight);
+
+      config.doc.setFont('helvetica', cell.isHeader ? 'bold' : 'normal');
+      config.doc.setTextColor(0, 0, 0);
+      cell.lines.forEach((line: string, li: number) => {
+        config.doc.text(
+          line,
+          x + cellPadding,
+          rowY + cellPadding + config.lineHeight * (li + 0.75),
+        );
+      });
+
+      xOffset += cell.width;
+    }
+
+    config.doc.setFont('helvetica', 'normal');
+    config.yPosition = rowY + rowHeight;
+  }
+
+  config.yPosition += config.lineHeight * 0.5;
 };
 
 // Function to add audit logs table

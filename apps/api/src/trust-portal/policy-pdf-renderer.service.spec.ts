@@ -286,6 +286,193 @@ describe('PolicyPdfRendererService', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
+    it('renders tables with header row and data cells (CS-221)', () => {
+      // Regression test for CS-221: tables in policy content rendered as
+      // stacked text in PDFs because there was no 'table' case in processContent.
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Data Retention Policy',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'heading',
+                  attrs: { level: 2 },
+                  content: [{ type: 'text', text: 'Appendix A' }],
+                },
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableHeader',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Data Type' }],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableHeader',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [
+                                { type: 'text', text: 'Retention Period' },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'User logs' }],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: '90 days' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [
+                                { type: 'text', text: 'Billing records' },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: '7 years' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.subarray(0, 5).toString()).toBe('%PDF-');
+    });
+
+    it('renders tables with cell colspan', () => {
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Colspan Policy',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableHeader',
+                          attrs: { colspan: 2 },
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [
+                                { type: 'text', text: 'Merged header' },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Left' }],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Right' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('handles empty tables without crashing', () => {
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Empty Table Policy',
+            content: {
+              type: 'doc',
+              content: [{ type: 'table', content: [] }],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
     it('applies custom primary color', () => {
       const result = service.renderPoliciesPdfBuffer(
         [
