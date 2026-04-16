@@ -531,14 +531,22 @@ export class PolicyPdfRendererService {
   }
 
   private blockText(node: JSONContent): string {
-    if (node.type === 'bulletList' || node.type === 'orderedList') {
+    if (node.type === 'bulletList') {
       if (!node.content) return '';
       return node.content
-        .map((item) => this.blockText(item))
+        .map((item) => this.renderListItem(item, '•'))
+        .filter((s) => s.length > 0)
+        .join('\n');
+    }
+    if (node.type === 'orderedList') {
+      if (!node.content) return '';
+      return node.content
+        .map((item, i) => this.renderListItem(item, `${i + 1}.`))
         .filter((s) => s.length > 0)
         .join('\n');
     }
     if (node.type === 'listItem') {
+      // Bare listItem without a parent list (unusual); render without prefix.
       if (!node.content) return '';
       return node.content
         .map((child) => this.blockText(child))
@@ -549,6 +557,16 @@ export class PolicyPdfRendererService {
     if (node.text) return node.text;
     if (!node.content) return '';
     return node.content.map((child) => this.blockText(child)).join('');
+  }
+
+  private renderListItem(itemNode: JSONContent, prefix: string): string {
+    if (!itemNode.content) return '';
+    const body = itemNode.content
+      .map((child) => this.blockText(child))
+      .filter((s) => s.length > 0)
+      .join('\n');
+    if (!body) return '';
+    return `${prefix} ${body}`;
   }
 
   renderPoliciesPdfBuffer(

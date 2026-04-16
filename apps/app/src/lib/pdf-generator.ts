@@ -309,15 +309,33 @@ const processContent = (config: PDFConfig, content: JSONContent[], level: number
 // concatenated "Retention Period30 days" or "AlphaBeta".
 //
 // NOTE: Keep in sync with apps/api/src/trust-portal/policy-pdf-renderer.service.ts
+const renderListItem = (itemNode: JSONContent, prefix: string): string => {
+  if (!itemNode.content) return '';
+  const body = itemNode.content
+    .map((child) => blockText(child))
+    .filter((s) => s.length > 0)
+    .join('\n');
+  if (!body) return '';
+  return `${prefix} ${body}`;
+};
+
 const blockText = (node: JSONContent): string => {
-  if (node.type === 'bulletList' || node.type === 'orderedList') {
+  if (node.type === 'bulletList') {
     if (!node.content) return '';
     return node.content
-      .map((item) => blockText(item))
+      .map((item) => renderListItem(item, '•'))
+      .filter((s) => s.length > 0)
+      .join('\n');
+  }
+  if (node.type === 'orderedList') {
+    if (!node.content) return '';
+    return node.content
+      .map((item, i) => renderListItem(item, `${i + 1}.`))
       .filter((s) => s.length > 0)
       .join('\n');
   }
   if (node.type === 'listItem') {
+    // Bare listItem without a parent list (unusual); render without prefix.
     if (!node.content) return '';
     return node.content
       .map((child) => blockText(child))
