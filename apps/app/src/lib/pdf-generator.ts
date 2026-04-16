@@ -304,19 +304,35 @@ const processContent = (config: PDFConfig, content: JSONContent[], level: number
 };
 
 // Extract display text from a table cell's block-level content.
-// See renderTable-in-sync note below: joins top-level blocks with '\n' so
-// splitTextToSize wraps multi-paragraph cells correctly instead of producing
-// a concatenated "Retention Period30 days".
-const extractInlineText = (node: JSONContent): string => {
+// Joins top-level blocks and list items with '\n' so splitTextToSize wraps
+// multi-paragraph/multi-list-item cells correctly instead of producing a
+// concatenated "Retention Period30 days" or "AlphaBeta".
+//
+// NOTE: Keep in sync with apps/api/src/trust-portal/policy-pdf-renderer.service.ts
+const blockText = (node: JSONContent): string => {
+  if (node.type === 'bulletList' || node.type === 'orderedList') {
+    if (!node.content) return '';
+    return node.content
+      .map((item) => blockText(item))
+      .filter((s) => s.length > 0)
+      .join('\n');
+  }
+  if (node.type === 'listItem') {
+    if (!node.content) return '';
+    return node.content
+      .map((child) => blockText(child))
+      .filter((s) => s.length > 0)
+      .join('\n');
+  }
   if (node.type === 'hardBreak') return '\n';
   if (node.text) return node.text;
   if (!node.content) return '';
-  return node.content.map((child) => extractInlineText(child)).join('');
+  return node.content.map((child) => blockText(child)).join('');
 };
 
 const extractCellText = (cellContent: JSONContent[]): string =>
   cellContent
-    .map((block) => extractInlineText(block))
+    .map((block) => blockText(block))
     .filter((s) => s.length > 0)
     .join('\n');
 

@@ -507,25 +507,48 @@ export class PolicyPdfRendererService {
   /**
    * Extract display text from a table cell's block-level content.
    *
-   * Tiptap cells wrap their content in block nodes (one `paragraph` per line,
-   * plus the occasional `hardBreak`). Joining top-level blocks with '\n'
-   * preserves the visual separation a user sees in the editor so that
-   * splitTextToSize wraps each intended line separately — without it, two
-   * paragraphs like "Retention Period" and "30 days" would render as the
-   * single concatenated string "Retention Period30 days".
+   * Tiptap cells wrap their content in block nodes — most commonly one
+   * `paragraph` per visual line, plus the occasional `hardBreak` inside a
+   * paragraph or a `bulletList`/`orderedList`. We need to preserve the visual
+   * line boundaries the user sees in the editor so that `splitTextToSize`
+   * wraps each intended line separately. Without this, a cell with two
+   * paragraphs "Retention Period" and "30 days" renders as the single
+   * concatenated string "Retention Period30 days".
+   *
+   * Block boundaries that insert a newline:
+   *  - top-level children of the cell (paragraph, bulletList, etc.)
+   *  - each list item inside a bulletList/orderedList
+   *  - `hardBreak` nodes
+   *
+   * Inline marks (bold, italic, link) are flattened to their text — we lose
+   * the formatting but the content is complete.
    */
   private extractCellText(cellContent: JSONContent[]): string {
     return cellContent
-      .map((block) => this.extractInlineText(block))
+      .map((block) => this.blockText(block))
       .filter((s) => s.length > 0)
       .join('\n');
   }
 
-  private extractInlineText(node: JSONContent): string {
+  private blockText(node: JSONContent): string {
+    if (node.type === 'bulletList' || node.type === 'orderedList') {
+      if (!node.content) return '';
+      return node.content
+        .map((item) => this.blockText(item))
+        .filter((s) => s.length > 0)
+        .join('\n');
+    }
+    if (node.type === 'listItem') {
+      if (!node.content) return '';
+      return node.content
+        .map((child) => this.blockText(child))
+        .filter((s) => s.length > 0)
+        .join('\n');
+    }
     if (node.type === 'hardBreak') return '\n';
     if (node.text) return node.text;
     if (!node.content) return '';
-    return node.content.map((child) => this.extractInlineText(child)).join('');
+    return node.content.map((child) => this.blockText(child)).join('');
   }
 
   renderPoliciesPdfBuffer(

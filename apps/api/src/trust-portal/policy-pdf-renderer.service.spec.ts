@@ -522,6 +522,247 @@ describe('PolicyPdfRendererService', () => {
       expect(pdfText).not.toContain('Line oneLine two');
     });
 
+    it('separates bullet list items inside a cell with newlines', () => {
+      // A cell whose only block is a bulletList used to concatenate items
+      // (e.g. "AlphaBeta") because extractInlineText didn't recognize list
+      // containers as line-break boundaries.
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'List-in-Cell Policy',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'bulletList',
+                              content: [
+                                {
+                                  type: 'listItem',
+                                  content: [
+                                    {
+                                      type: 'paragraph',
+                                      content: [
+                                        { type: 'text', text: 'Alpha' },
+                                      ],
+                                    },
+                                  ],
+                                },
+                                {
+                                  type: 'listItem',
+                                  content: [
+                                    {
+                                      type: 'paragraph',
+                                      content: [
+                                        { type: 'text', text: 'Beta' },
+                                      ],
+                                    },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      const pdfText = result.toString('latin1');
+      expect(pdfText).not.toContain('AlphaBeta');
+    });
+
+    it('renders very long cell text across wrapped lines', () => {
+      // Stress test: a single cell with text much longer than the column
+      // width. Must not throw, must produce a valid PDF, and must grow the
+      // row height (so lines don't overlap).
+      const longText =
+        'This is a very long cell value that should wrap across multiple lines inside the cell. '.repeat(
+          4,
+        );
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Long Text Policy',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: longText }],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'short' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.subarray(0, 5).toString()).toBe('%PDF-');
+    });
+
+    it('inserts a page break when a table row does not fit the current page', () => {
+      // 50 rows forces at least one page break mid-table. Must not throw.
+      const rows = Array.from({ length: 50 }, (_, i) => ({
+        type: 'tableRow' as const,
+        content: [
+          {
+            type: 'tableCell' as const,
+            content: [
+              {
+                type: 'paragraph' as const,
+                content: [{ type: 'text' as const, text: `Row ${i + 1}` }],
+              },
+            ],
+          },
+          {
+            type: 'tableCell' as const,
+            content: [
+              {
+                type: 'paragraph' as const,
+                content: [{ type: 'text' as const, text: `Value ${i + 1}` }],
+              },
+            ],
+          },
+        ],
+      }));
+
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Long Table Policy',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableHeader',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Row' }],
+                            },
+                          ],
+                        },
+                        {
+                          type: 'tableHeader',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Value' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    ...rows,
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('renders content that follows a table on the same page', () => {
+      // yPosition must advance past the table so following content doesn't
+      // overlap it.
+      const result = service.renderPoliciesPdfBuffer(
+        [
+          {
+            name: 'Table Then Paragraph',
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'table',
+                  content: [
+                    {
+                      type: 'tableRow',
+                      content: [
+                        {
+                          type: 'tableCell',
+                          content: [
+                            {
+                              type: 'paragraph',
+                              content: [{ type: 'text', text: 'Cell' }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Paragraph after the table renders normally.',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        'Test Org',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
     it('handles empty tables without crashing', () => {
       const result = service.renderPoliciesPdfBuffer(
         [
