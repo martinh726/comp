@@ -1,3 +1,14 @@
+## [3.23.3](https://github.com/trycompai/comp/compare/v3.23.2...v3.23.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* **automations:** add timezone to next-run label + tighten placeholder test (CS-97 review) ([6e7429b](https://github.com/trycompai/comp/commit/6e7429be627991d8cb081fcc10ccbf470018def3))
+* **automations:** defer next-run label to post-mount to avoid hydration mismatch (CS-97 review) ([212e532](https://github.com/trycompai/comp/commit/212e532137f795f3ce77fdcd88eaaba91d2dc339))
+* **automations:** show schedule in UTC and next run in user tz (CS-97) ([83e6148](https://github.com/trycompai/comp/commit/83e614819aeb9c84005901900ce44338204f3468))
+* **policies:** restore the AI-tailoring UI on the Policies page (ENG-108) ([c6058f2](https://github.com/trycompai/comp/commit/c6058f2eee52ff692376e9938073b7f63d918a2c))
+* **tasks:** render task description markdown in the main app (CS-98) ([86357df](https://github.com/trycompai/comp/commit/86357dfcdcfcd42c5f91c75fbf302799b8d32f92))
+
 ## [3.23.2](https://github.com/trycompai/comp/compare/v3.23.1...v3.23.2) (2026-04-16)
 
 
