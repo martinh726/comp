@@ -47,7 +47,12 @@ export function AppSidebar({
       id: 'auditor',
       path: `/${organization.id}/auditor`,
       name: 'Auditor View',
-      hidden: !hasAuditorRole || !canAccessRoute(permissions, 'auditor'),
+      // CS-189: gate on permission only — the old role-string check
+      // (`!hasAuditorRole`) hid the tab from owners/admins and from any
+      // custom org role (e.g. a "Comp AI" role) even when they had
+      // audit:read. Route protection at apps/app/.../auditor/layout.tsx
+      // still enforces audit:read server-side.
+      hidden: !canAccessRoute(permissions, 'auditor'),
     },
     {
       id: 'policies',

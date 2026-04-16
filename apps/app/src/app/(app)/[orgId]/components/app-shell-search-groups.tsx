@@ -96,7 +96,8 @@ export const getAppShellSearchGroups = ({
           }),
         ]
       : []),
-    ...(hasAuditorRole && can('auditor')
+    // CS-189: permission-only gate — see AppSidebar for rationale.
+    ...(can('auditor')
       ? [
           createNavItem({
             id: 'auditor',

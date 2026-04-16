@@ -1,5 +1,7 @@
 'use client';
 
+import { canAccessRoute } from '@/lib/permissions';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Badge } from '@trycompai/ui/badge';
 import { Button } from '@trycompai/ui/button';
 import { cn } from '@trycompai/ui/cn';
@@ -54,7 +56,6 @@ export type Props = {
   onItemClick?: () => void;
   isQuestionnaireEnabled?: boolean;
   isTrustNdaEnabled?: boolean;
-  hasAuditorRole?: boolean;
   isOnlyAuditor?: boolean;
 };
 
@@ -65,12 +66,17 @@ export function MainMenu({
   onItemClick,
   isQuestionnaireEnabled = false,
   isTrustNdaEnabled = false,
-  hasAuditorRole = false,
   isOnlyAuditor = false,
 }: Props) {
   const pathname = usePathname();
   const [activeStyle, setActiveStyle] = useState({ top: '0px', height: '0px' });
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // CS-189: gate the Auditor View tab on audit:read permission rather than
+  // a literal role-string match. That way any custom org role (e.g. "Comp AI")
+  // granted the permission — and owners/admins who implicitly have it — can
+  // access the tab, not just the built-in "auditor" role.
+  const { permissions } = usePermissions();
+  const canAccessAuditor = canAccessRoute(permissions, 'auditor');
 
   const items: MenuItem[] = [
     {
@@ -96,7 +102,7 @@ export function MainMenu({
       disabled: false,
       icon: ClipboardCheck,
       protected: false,
-      hidden: !hasAuditorRole,
+      hidden: !canAccessAuditor,
     },
     {
       id: 'controls',

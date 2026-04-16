@@ -62,6 +62,30 @@ describe('canAccessRoute', () => {
     const permissions: UserPermissions = {};
     expect(canAccessRoute(permissions, 'nonexistent-route')).toBe(true);
   });
+
+  // CS-189: Auditor View tab visibility is now gated solely on audit:read.
+  // The tab must be visible for ANY role that has audit:read (owner, admin,
+  // auditor, or a custom org role like "Comp AI" granted the permission) —
+  // not just the built-in 'auditor' role string.
+  describe('auditor route (CS-189)', () => {
+    it('grants access to any role with audit:read', () => {
+      expect(canAccessRoute({ audit: ['read'] }, 'auditor')).toBe(true);
+    });
+
+    it('grants access when audit:read is among multiple permissions (custom role)', () => {
+      const customCompAi: UserPermissions = {
+        audit: ['read'],
+        evidence: ['read', 'update'],
+        policy: ['read'],
+      };
+      expect(canAccessRoute(customCompAi, 'auditor')).toBe(true);
+    });
+
+    it('denies access when audit:read is missing', () => {
+      expect(canAccessRoute({ evidence: ['read'] }, 'auditor')).toBe(false);
+      expect(canAccessRoute({}, 'auditor')).toBe(false);
+    });
+  });
 });
 
 describe('getDefaultRoute', () => {
