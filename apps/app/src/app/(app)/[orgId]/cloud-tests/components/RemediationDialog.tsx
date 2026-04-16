@@ -1,6 +1,5 @@
 'use client';
 
-import { useApi } from '@/hooks/use-api';
 import { Badge } from '@trycompai/ui/badge';
 import { Button } from '@trycompai/ui/button';
 import {
@@ -14,9 +13,15 @@ import { useRealtimeRun } from '@trigger.dev/react-hooks';
 import { AlertTriangle, ListOrdered, Loader2, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { startSingleFix } from '../actions/single-fix';
+import { startPreview, startSingleFix } from '../actions/single-fix';
 import { AcknowledgmentPanel } from './AcknowledgmentPanel';
 import { PermissionErrorPanel } from './PermissionErrorPanel';
+
+interface PreviewProgress {
+  phase: 'analyzing' | 'complete' | 'failed';
+  error?: string;
+  preview?: PreviewData;
+}
 
 interface SingleFixProgress {
   phase: 'executing' | 'success' | 'failed' | 'needs_permissions';
@@ -267,7 +272,6 @@ export function RemediationDialog({
   description,
   onComplete,
 }: RemediationDialogProps) {
-  const api = useApi();
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -277,18 +281,53 @@ export function RemediationDialog({
   const [permissionError, setPermissionError] = useState<{ missingActions: string[]; fixScript?: string } | null>(null);
   const [acknowledgment, setAcknowledgment] = useState<string | null>(null);
 
-  // Trigger.dev state for async execution
-  const [runId, setRunId] = useState<string | null>(null);
-  const [triggerAccessToken, setTriggerAccessToken] = useState<string | null>(null);
+  // Trigger.dev state for preview (async)
+  const [previewRunId, setPreviewRunId] = useState<string | null>(null);
+  const [previewAccessToken, setPreviewAccessToken] = useState<string | null>(null);
 
-  const { run } = useRealtimeRun(runId ?? '', {
-    accessToken: triggerAccessToken ?? undefined,
-    enabled: Boolean(runId && triggerAccessToken),
+  // Trigger.dev state for execute (async)
+  const [executeRunId, setExecuteRunId] = useState<string | null>(null);
+  const [executeAccessToken, setExecuteAccessToken] = useState<string | null>(null);
+
+  const { run: previewRun } = useRealtimeRun(previewRunId ?? '', {
+    accessToken: previewAccessToken ?? undefined,
+    enabled: Boolean(previewRunId && previewAccessToken),
   });
 
-  // Watch task progress and update dialog state
+  const { run: executeRun } = useRealtimeRun(executeRunId ?? '', {
+    accessToken: executeAccessToken ?? undefined,
+    enabled: Boolean(executeRunId && executeAccessToken),
+  });
+
+  // Ref to store permissions across rechecks (avoids stale closure in useCallback)
+  const permissionsRef = useRef<string[] | undefined>(undefined);
+
+  // Watch preview task progress
   useEffect(() => {
-    const progress = (run?.metadata as { progress?: SingleFixProgress } | undefined)?.progress;
+    const progress = (previewRun?.metadata as { progress?: PreviewProgress } | undefined)?.progress;
+    if (!progress || progress.phase === 'analyzing') return;
+
+    if (progress.phase === 'complete' && progress.preview) {
+      const previewData = progress.preview as unknown as PreviewData;
+      setPreview(previewData);
+      if (previewData.allRequiredPermissions) {
+        permissionsRef.current = previewData.allRequiredPermissions;
+      }
+      setIsLoadingPreview(false);
+      setPreviewRunId(null);
+      setPreviewAccessToken(null);
+    } else if (progress.phase === 'failed') {
+      setError(progress.error || 'Failed to load preview');
+      setIsLoadingPreview(false);
+      setPreviewRunId(null);
+      setPreviewAccessToken(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewRun?.metadata]);
+
+  // Watch execute task progress
+  useEffect(() => {
+    const progress = (executeRun?.metadata as { progress?: SingleFixProgress } | undefined)?.progress;
     if (!progress || progress.phase === 'executing') return;
 
     if (progress.phase === 'success') {
@@ -301,73 +340,61 @@ export function RemediationDialog({
       setTimeout(() => {
         onOpenChange(false);
         setSucceeded(false);
-        setRunId(null);
-        setTriggerAccessToken(null);
+        setExecuteRunId(null);
+        setExecuteAccessToken(null);
       }, 4000);
     } else if (progress.phase === 'failed') {
       setIsExecuting(false);
       setError(progress.error || 'Remediation failed');
-      setRunId(null);
-      setTriggerAccessToken(null);
+      setExecuteRunId(null);
+      setExecuteAccessToken(null);
     } else if (progress.phase === 'needs_permissions') {
       setIsExecuting(false);
       setError(progress.error || 'Missing permissions');
       if (progress.permissionError) {
         setPermissionError(progress.permissionError);
       }
-      setRunId(null);
-      setTriggerAccessToken(null);
+      setExecuteRunId(null);
+      setExecuteAccessToken(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run?.metadata]);
-
-  // Ref to store permissions across rechecks (avoids stale closure in useCallback)
-  const permissionsRef = useRef<string[] | undefined>(undefined);
+  }, [executeRun?.metadata]);
 
   const loadPreview = useCallback(async (recheck = false) => {
     setIsLoadingPreview(true);
     setError(null);
     try {
-      const response = await api.post(
-        '/v1/cloud-security/remediation/preview',
-        {
-          connectionId,
-          checkResultId,
-          remediationKey,
-          // On recheck, send the cached permissions so backend doesn't re-run AI
-          ...(recheck && permissionsRef.current && {
-            cachedPermissions: permissionsRef.current,
-          }),
-        },
-      );
-      if (response.error) {
-        setError(
-          typeof response.error === 'string'
-            ? response.error
-            : 'Failed to load preview',
-        );
+      const result = await startPreview({
+        connectionId,
+        checkResultId,
+        remediationKey,
+        ...(recheck && permissionsRef.current && {
+          cachedPermissions: permissionsRef.current,
+        }),
+      });
+      if (result.error || !result.data) {
+        setError(result.error || 'Failed to load preview');
+        setIsLoadingPreview(false);
         return;
       }
-      const previewData = response.data as PreviewData;
-      setPreview(previewData);
-      // Store permissions in ref so Recheck can access them without stale closure
-      if (previewData.allRequiredPermissions) {
-        permissionsRef.current = previewData.allRequiredPermissions;
-      }
+      // Task started — preview effect handles the rest
+      setPreviewRunId(result.data.runId);
+      setPreviewAccessToken(result.data.accessToken);
     } catch {
       setError('Failed to load preview');
-    } finally {
       setIsLoadingPreview(false);
     }
-  }, [api, connectionId, checkResultId, remediationKey]);
+  }, [connectionId, checkResultId, remediationKey]);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
     setPermissionError(null);
     setAcknowledgment(null);
-    setRunId(null);
-    setTriggerAccessToken(null);
+    setPreviewRunId(null);
+    setPreviewAccessToken(null);
+    setExecuteRunId(null);
+    setExecuteAccessToken(null);
     setSucceeded(false);
 
     // Guided-only: skip API call, use local data
@@ -406,9 +433,9 @@ export function RemediationDialog({
         setIsExecuting(false);
         return;
       }
-      // Task started — useRealtimeRun effect handles the rest
-      setRunId(result.data.runId);
-      setTriggerAccessToken(result.data.accessToken);
+      // Task started — execute effect handles the rest
+      setExecuteRunId(result.data.runId);
+      setExecuteAccessToken(result.data.accessToken);
     } catch {
       setError('Failed to start fix');
       setIsExecuting(false);
