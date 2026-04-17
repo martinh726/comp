@@ -38,9 +38,11 @@ type FormValues = z.infer<typeof schema>;
 export function AddCustomControlSheet({
   frameworkInstanceId,
   requirementId,
+  isCustomRequirement,
 }: {
   frameworkInstanceId: string;
   requirementId: string;
+  isCustomRequirement: boolean;
 }) {
   const { hasPermission } = usePermissions();
   const { createControl } = useControls();
@@ -63,7 +65,11 @@ export function AddCustomControlSheet({
       await createControl({
         name: values.name,
         description: values.description,
-        requirementMappings: [{ requirementId, frameworkInstanceId }],
+        requirementMappings: [
+          isCustomRequirement
+            ? { customRequirementId: requirementId, frameworkInstanceId }
+            : { requirementId, frameworkInstanceId },
+        ],
       });
       toast.success('Control created');
       setIsOpen(false);

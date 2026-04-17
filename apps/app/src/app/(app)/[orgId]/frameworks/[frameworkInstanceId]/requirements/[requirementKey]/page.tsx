@@ -44,7 +44,9 @@ export default async function RequirementPage({ params }: PageProps) {
 
   const framework = frameworkRes.data;
   const reqData = requirementRes.data;
-  const frameworkName = framework.framework?.name ?? 'Framework';
+  const frameworkName =
+    framework.framework?.name ?? framework.customFramework?.name ?? 'Framework';
+  const isCustomFramework = Boolean(framework.customFrameworkId);
   const requirement = reqData.requirement;
 
   const identifier: string | undefined = requirement.identifier?.trim() || undefined;
@@ -71,6 +73,7 @@ export default async function RequirementPage({ params }: PageProps) {
           <LinkExistingControlSheet
             frameworkInstanceId={frameworkInstanceId}
             requirementId={requirementKey}
+            isCustomRequirement={isCustomFramework}
             alreadyMappedControlIds={(reqData.relatedControls ?? []).map(
               (rc: { control: { id: string } }) => rc.control.id,
             )}
@@ -78,6 +81,7 @@ export default async function RequirementPage({ params }: PageProps) {
           <AddCustomControlSheet
             frameworkInstanceId={frameworkInstanceId}
             requirementId={requirementKey}
+            isCustomRequirement={isCustomFramework}
           />
         </PageHeaderActions>
       </PageHeader>

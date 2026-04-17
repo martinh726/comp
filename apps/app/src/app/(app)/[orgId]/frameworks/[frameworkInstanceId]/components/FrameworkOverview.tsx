@@ -67,10 +67,19 @@ export function FrameworkOverview({
 
   const inProgressControls = totalControls - compliantControls;
 
+  const frameworkDisplayName =
+    frameworkInstanceWithControls.framework?.name ??
+    frameworkInstanceWithControls.customFramework?.name ??
+    'Framework';
+  const frameworkDisplayDescription =
+    frameworkInstanceWithControls.framework?.description ??
+    frameworkInstanceWithControls.customFramework?.description ??
+    '';
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={frameworkInstanceWithControls.framework.name}
+        title={frameworkDisplayName}
         actions={
           <>
             <LinkRequirementSheet
@@ -103,10 +112,10 @@ export function FrameworkOverview({
           </>
         }
       />
-      {frameworkInstanceWithControls.framework.description && (
+      {frameworkDisplayDescription && (
         <div className="max-w-2xl">
           <Text size="sm" variant="muted">
-            {frameworkInstanceWithControls.framework.description}
+            {frameworkDisplayDescription}
           </Text>
         </div>
       )}

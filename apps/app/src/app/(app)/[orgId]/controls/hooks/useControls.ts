@@ -15,9 +15,11 @@ interface CreateControlPayload {
   policyIds?: string[];
   taskIds?: string[];
   requirementMappings?: {
-    requirementId: string;
+    requirementId?: string;
+    customRequirementId?: string;
     frameworkInstanceId: string;
   }[];
+  documentTypes?: string[];
 }
 
 export const controlsKey = () => ['/v1/controls'] as const;

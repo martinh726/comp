@@ -21,15 +21,21 @@ import {
 } from '@trycompai/design-system';
 import { useState } from 'react';
 import { PoliciesTable } from '@/app/(app)/[orgId]/controls/[controlId]/components/PoliciesTable';
-import { RequirementsTable } from '@/app/(app)/[orgId]/controls/[controlId]/components/RequirementsTable';
 import { TasksTable } from '@/app/(app)/[orgId]/controls/[controlId]/components/TasksTable';
+import { DocumentsTable } from './DocumentsTable';
+import { LinkDocumentTypeSheet } from './LinkDocumentTypeSheet';
 import { LinkPolicySheet } from './LinkPolicySheet';
-import { LinkRequirementForControlSheet } from './LinkRequirementForControlSheet';
 import { LinkTaskSheet } from './LinkTaskSheet';
+
+interface DocumentRow {
+  formType: string;
+  submissionCount: number;
+}
 
 type ControlDetail = Control & {
   policies: Policy[];
   tasks: Task[];
+  controlDocumentTypes?: { formType: string }[];
   requirementsMapped: (RequirementMap & {
     frameworkInstance: FrameworkInstance & {
       framework: FrameworkEditorFramework;
@@ -48,19 +54,21 @@ interface Props {
   orgId: string;
   control: ControlDetail;
   breadcrumbs: Breadcrumb[];
+  documentRows: DocumentRow[];
 }
 
 export function FrameworkControlShell({
   orgId,
   control,
   breadcrumbs,
+  documentRows,
 }: Props) {
   const [activeTab, setActiveTab] = useState('policies');
 
   const linkedPolicyIds = control.policies.map((p) => p.id);
   const linkedTaskIds = control.tasks.map((t) => t.id);
-  const linkedRequirementIds = control.requirementsMapped.map(
-    (rm) => rm.requirement.id,
+  const linkedFormTypes = (control.controlDocumentTypes ?? []).map(
+    (d) => d.formType,
   );
 
   const actions =
@@ -75,9 +83,9 @@ export function FrameworkControlShell({
         alreadyLinkedTaskIds={linkedTaskIds}
       />
     ) : (
-      <LinkRequirementForControlSheet
+      <LinkDocumentTypeSheet
         controlId={control.id}
-        alreadyLinkedRequirementIds={linkedRequirementIds}
+        alreadyLinkedFormTypes={linkedFormTypes}
       />
     );
 
@@ -98,8 +106,8 @@ export function FrameworkControlShell({
             <TabsTrigger value="tasks">
               Tasks ({control.tasks.length})
             </TabsTrigger>
-            <TabsTrigger value="requirements">
-              Requirements ({control.requirementsMapped.length})
+            <TabsTrigger value="documents">
+              Documents ({documentRows.length})
             </TabsTrigger>
           </TabsList>
 
@@ -111,10 +119,11 @@ export function FrameworkControlShell({
             <TasksTable tasks={control.tasks} orgId={orgId} />
           </TabsContent>
 
-          <TabsContent value="requirements">
-            <RequirementsTable
-              requirements={control.requirementsMapped}
+          <TabsContent value="documents">
+            <DocumentsTable
+              controlId={control.id}
               orgId={orgId}
+              rows={documentRows}
             />
           </TabsContent>
         </Stack>

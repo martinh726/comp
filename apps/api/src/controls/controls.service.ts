@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db, Prisma } from '@db';
+import { db, EvidenceFormType, Prisma } from '@db';
 import { CreateControlDto } from './dto/create-control.dto';
 
 const controlInclude = {
@@ -16,9 +16,12 @@ const controlInclude = {
   requirementsMapped: {
     include: {
       frameworkInstance: {
-        include: { framework: true },
+        include: { framework: true, customFramework: true },
       },
       requirement: {
+        select: { name: true, identifier: true },
+      },
+      customRequirement: {
         select: { name: true, identifier: true },
       },
     },
@@ -71,12 +74,14 @@ export class ControlsService {
       include: {
         policies: true,
         tasks: true,
+        controlDocumentTypes: true,
         requirementsMapped: {
           include: {
             frameworkInstance: {
-              include: { framework: true },
+              include: { framework: true, customFramework: true },
             },
             requirement: true,
+            customRequirement: true,
           },
         },
       },
@@ -84,6 +89,24 @@ export class ControlsService {
 
     if (!control) {
       throw new NotFoundException('Control not found');
+    }
+
+    const formTypes = (control.controlDocumentTypes ?? []).map(
+      (d) => d.formType,
+    );
+    const submissionCountsByFormType: Record<string, number> = {};
+    if (formTypes.length > 0) {
+      const grouped = await db.evidenceSubmission.groupBy({
+        by: ['formType'],
+        where: {
+          organizationId,
+          formType: { in: formTypes },
+        },
+        _count: { _all: true },
+      });
+      for (const g of grouped) {
+        submissionCountsByFormType[g.formType] = g._count._all;
+      }
     }
 
     // Compute progress
@@ -105,6 +128,7 @@ export class ControlsService {
 
     return {
       ...control,
+      submissionCountsByFormType,
       progress: {
         total: totalItems,
         completed,
@@ -140,61 +164,124 @@ export class ControlsService {
               },
             },
           },
+          customFramework: {
+            include: {
+              requirements: {
+                select: { id: true, name: true, identifier: true },
+              },
+            },
+          },
         },
       }),
     ]);
 
-    const requirements = frameworkInstances.flatMap((fi) =>
-      fi.framework.requirements.map((req) => ({
-        id: req.id,
-        name: req.name,
-        identifier: req.identifier,
-        frameworkInstanceId: fi.id,
-        frameworkName: fi.framework.name,
-      })),
-    );
+    type RequirementOption = {
+      id: string;
+      name: string;
+      identifier: string;
+      frameworkInstanceId: string;
+      frameworkName: string;
+      isCustom: boolean;
+      requirementId?: string;
+      customRequirementId?: string;
+    };
+    const requirements: RequirementOption[] = [];
+    for (const fi of frameworkInstances) {
+      if (fi.customFramework) {
+        for (const req of fi.customFramework.requirements) {
+          requirements.push({
+            id: req.id,
+            name: req.name,
+            identifier: req.identifier,
+            customRequirementId: req.id,
+            frameworkInstanceId: fi.id,
+            frameworkName: fi.customFramework.name,
+            isCustom: true,
+          });
+        }
+      } else if (fi.framework) {
+        for (const req of fi.framework.requirements) {
+          requirements.push({
+            id: req.id,
+            name: req.name,
+            identifier: req.identifier,
+            requirementId: req.id,
+            frameworkInstanceId: fi.id,
+            frameworkName: fi.framework.name,
+            isCustom: false,
+          });
+        }
+      }
+    }
 
     return { policies, tasks, requirements };
   }
 
   async create(organizationId: string, dto: CreateControlDto) {
-    const { name, description, policyIds, taskIds, requirementMappings } = dto;
+    const {
+      name,
+      description,
+      policyIds,
+      taskIds,
+      requirementMappings,
+      documentTypes,
+    } = dto;
 
-    const control = await db.control.create({
-      data: {
-        name,
-        description,
-        organizationId,
-        ...(policyIds &&
-          policyIds.length > 0 && {
-            policies: {
-              connect: policyIds.map((id) => ({ id })),
-            },
-          }),
-        ...(taskIds &&
-          taskIds.length > 0 && {
-            tasks: {
-              connect: taskIds.map((id) => ({ id })),
-            },
-          }),
-      },
-    });
-
-    if (requirementMappings && requirementMappings.length > 0) {
-      await Promise.all(
-        requirementMappings.map((mapping) =>
-          db.requirementMap.create({
-            data: {
-              controlId: control.id,
-              requirementId: mapping.requirementId,
-              frameworkInstanceId: mapping.frameworkInstanceId,
-            },
-          }),
-        ),
-      );
+    for (const m of requirementMappings ?? []) {
+      const hasPlatform = Boolean(m.requirementId);
+      const hasCustom = Boolean(m.customRequirementId);
+      if (hasPlatform === hasCustom) {
+        throw new BadRequestException(
+          'Each requirement mapping must set exactly one of requirementId or customRequirementId',
+        );
+      }
     }
 
-    return control;
+    return db.$transaction(async (tx) => {
+      const control = await tx.control.create({
+        data: {
+          name,
+          description,
+          organizationId,
+          ...(policyIds &&
+            policyIds.length > 0 && {
+              policies: {
+                connect: policyIds.map((id) => ({ id })),
+              },
+            }),
+          ...(taskIds &&
+            taskIds.length > 0 && {
+              tasks: {
+                connect: taskIds.map((id) => ({ id })),
+              },
+            }),
+        },
+      });
+
+      if (requirementMappings && requirementMappings.length > 0) {
+        await tx.requirementMap.createMany({
+          data: requirementMappings.map((mapping) => ({
+            controlId: control.id,
+            frameworkInstanceId: mapping.frameworkInstanceId,
+            requirementId: mapping.requirementId ?? null,
+            customRequirementId: mapping.customRequirementId ?? null,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      if (documentTypes && documentTypes.length > 0) {
+        await tx.controlDocumentType.createMany({
+          data: documentTypes.map((formType) => ({
+            controlId: control.id,
+            formType,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return control;
+    });
   }
 
   private async ensureControl(controlId: string, organizationId: string) {
@@ -257,37 +344,73 @@ export class ControlsService {
   async linkRequirements(
     controlId: string,
     organizationId: string,
-    mappings: { requirementId: string; frameworkInstanceId: string }[],
+    mappings: {
+      requirementId?: string;
+      customRequirementId?: string;
+      frameworkInstanceId: string;
+    }[],
   ) {
     await this.ensureControl(controlId, organizationId);
+
+    for (const m of mappings) {
+      const hasPlatform = Boolean(m.requirementId);
+      const hasCustom = Boolean(m.customRequirementId);
+      if (hasPlatform === hasCustom) {
+        throw new BadRequestException(
+          'Each mapping must set exactly one of requirementId or customRequirementId',
+        );
+      }
+    }
 
     const frameworkInstanceIds = Array.from(
       new Set(mappings.map((m) => m.frameworkInstanceId)),
     );
     const instances = await db.frameworkInstance.findMany({
       where: { id: { in: frameworkInstanceIds }, organizationId },
-      select: { id: true, frameworkId: true },
+      select: { id: true, frameworkId: true, customFrameworkId: true },
     });
-    const instanceByfId = new Map(instances.map((i) => [i.id, i.frameworkId]));
+    const instanceById = new Map(instances.map((i) => [i.id, i]));
 
-    const requirementIds = Array.from(
-      new Set(mappings.map((m) => m.requirementId)),
+    const platformReqIds = mappings
+      .map((m) => m.requirementId)
+      .filter((id): id is string => Boolean(id));
+    const customReqIds = mappings
+      .map((m) => m.customRequirementId)
+      .filter((id): id is string => Boolean(id));
+
+    const [platformReqs, customReqs] = await Promise.all([
+      platformReqIds.length > 0
+        ? db.frameworkEditorRequirement.findMany({
+            where: { id: { in: platformReqIds } },
+            select: { id: true, frameworkId: true },
+          })
+        : Promise.resolve<{ id: string; frameworkId: string }[]>([]),
+      customReqIds.length > 0
+        ? db.customRequirement.findMany({
+            where: { id: { in: customReqIds }, organizationId },
+            select: { id: true, customFrameworkId: true },
+          })
+        : Promise.resolve<{ id: string; customFrameworkId: string }[]>([]),
+    ]);
+    const platformReqFwById = new Map(
+      platformReqs.map((r) => [r.id, r.frameworkId]),
     );
-    const requirements = await db.frameworkEditorRequirement.findMany({
-      where: {
-        id: { in: requirementIds },
-        OR: [{ organizationId: null }, { organizationId }],
-      },
-      select: { id: true, frameworkId: true },
-    });
-    const reqFrameworkById = new Map(
-      requirements.map((r) => [r.id, r.frameworkId]),
+    const customReqFwById = new Map(
+      customReqs.map((r) => [r.id, r.customFrameworkId]),
     );
 
     const validMappings = mappings.filter((m) => {
-      const instanceFwId = instanceByfId.get(m.frameworkInstanceId);
-      const reqFwId = reqFrameworkById.get(m.requirementId);
-      return Boolean(instanceFwId) && instanceFwId === reqFwId;
+      const instance = instanceById.get(m.frameworkInstanceId);
+      if (!instance) return false;
+      if (m.requirementId) {
+        const reqFwId = platformReqFwById.get(m.requirementId);
+        return Boolean(reqFwId) && reqFwId === instance.frameworkId;
+      }
+      if (m.customRequirementId) {
+        const reqFwId = customReqFwById.get(m.customRequirementId);
+        return Boolean(reqFwId) && reqFwId === instance.customFrameworkId;
+      }
+      return false;
     });
 
     if (validMappings.length === 0) {
@@ -297,13 +420,39 @@ export class ControlsService {
     await db.requirementMap.createMany({
       data: validMappings.map((m) => ({
         controlId,
-        requirementId: m.requirementId,
         frameworkInstanceId: m.frameworkInstanceId,
+        requirementId: m.requirementId ?? null,
+        customRequirementId: m.customRequirementId ?? null,
       })),
       skipDuplicates: true,
     });
 
     return { count: validMappings.length };
+  }
+
+  async linkDocumentTypes(
+    controlId: string,
+    organizationId: string,
+    formTypes: EvidenceFormType[],
+  ) {
+    await this.ensureControl(controlId, organizationId);
+    await db.controlDocumentType.createMany({
+      data: formTypes.map((formType) => ({ controlId, formType })),
+      skipDuplicates: true,
+    });
+    return { count: formTypes.length };
+  }
+
+  async unlinkDocumentType(
+    controlId: string,
+    organizationId: string,
+    formType: EvidenceFormType,
+  ) {
+    await this.ensureControl(controlId, organizationId);
+    await db.controlDocumentType.deleteMany({
+      where: { controlId, formType },
+    });
+    return { success: true };
   }
 
   async delete(controlId: string, organizationId: string) {

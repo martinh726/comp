@@ -23,6 +23,8 @@ import { CreateControlDto } from './dto/create-control.dto';
 import { LinkPoliciesDto } from './dto/link-policies.dto';
 import { LinkTasksDto } from './dto/link-tasks.dto';
 import { LinkRequirementsToControlDto } from './dto/link-requirements.dto';
+import { LinkDocumentTypesDto } from './dto/link-document-types.dto';
+import { EvidenceFormType } from '@db';
 
 @ApiTags('Controls')
 @ApiBearerAuth()
@@ -133,6 +135,36 @@ export class ControlsController {
       id,
       organizationId,
       dto.requirements,
+    );
+  }
+
+  @Post(':id/document-types/link')
+  @RequirePermission('control', 'update')
+  @ApiOperation({ summary: 'Link required document types to a control' })
+  async linkDocumentTypes(
+    @OrganizationId() organizationId: string,
+    @Param('id') id: string,
+    @Body() dto: LinkDocumentTypesDto,
+  ) {
+    return this.controlsService.linkDocumentTypes(
+      id,
+      organizationId,
+      dto.formTypes,
+    );
+  }
+
+  @Delete(':id/document-types/:formType')
+  @RequirePermission('control', 'update')
+  @ApiOperation({ summary: 'Remove a required document type from a control' })
+  async unlinkDocumentType(
+    @OrganizationId() organizationId: string,
+    @Param('id') id: string,
+    @Param('formType') formType: EvidenceFormType,
+  ) {
+    return this.controlsService.unlinkDocumentType(
+      id,
+      organizationId,
+      formType,
     );
   }
 

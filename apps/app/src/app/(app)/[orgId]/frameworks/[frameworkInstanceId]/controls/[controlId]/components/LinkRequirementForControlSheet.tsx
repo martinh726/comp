@@ -60,10 +60,17 @@ export function LinkRequirementForControlSheet({
     if (selected.size === 0 || isSubmitting) return;
     const mappings = options
       .filter((o) => selected.has(o.id))
-      .map((o) => ({
-        requirementId: o.id,
-        frameworkInstanceId: o.frameworkInstanceId,
-      }));
+      .map((o) =>
+        o.isCustom
+          ? {
+              customRequirementId: o.id,
+              frameworkInstanceId: o.frameworkInstanceId,
+            }
+          : {
+              requirementId: o.id,
+              frameworkInstanceId: o.frameworkInstanceId,
+            },
+      );
     setIsSubmitting(true);
     try {
       const response = await apiClient.post(

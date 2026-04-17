@@ -134,7 +134,11 @@ export class AdminPoliciesController {
     });
 
     const uniqueFrameworks = Array.from(
-      new Map(instances.map((fi) => [fi.framework.id, fi.framework])).values(),
+      new Map(
+        instances
+          .filter((fi) => fi.framework)
+          .map((fi) => [fi.framework!.id, fi.framework!]),
+      ).values(),
     ).map((f) => ({
       id: f.id,
       name: f.name,

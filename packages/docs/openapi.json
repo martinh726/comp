@@ -20012,6 +20012,82 @@
         ]
       }
     },
+    "/v1/controls/{id}/document-types/link": {
+      "post": {
+        "operationId": "ControlsController_linkDocumentTypes_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkDocumentTypesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link required document types to a control",
+        "tags": [
+          "Controls"
+        ]
+      }
+    },
+    "/v1/controls/{id}/document-types/{formType}": {
+      "delete": {
+        "operationId": "ControlsController_unlinkDocumentType_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a required document type from a control",
+        "tags": [
+          "Controls"
+        ]
+      }
+    },
     "/v1/email/unsubscribe": {
       "post": {
         "operationId": "UnsubscribeController_unsubscribe_v1",
@@ -25064,7 +25140,11 @@
         "properties": {
           "requirementId": {
             "type": "string",
-            "description": "Requirement ID"
+            "description": "Platform requirement ID (exactly one of requirementId / customRequirementId must be set)"
+          },
+          "customRequirementId": {
+            "type": "string",
+            "description": "Org-custom requirement ID (exactly one of requirementId / customRequirementId must be set)"
           },
           "frameworkInstanceId": {
             "type": "string",
@@ -25072,7 +25152,6 @@
           }
         },
         "required": [
-          "requirementId",
           "frameworkInstanceId"
         ]
       },
@@ -25108,6 +25187,27 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RequirementMappingDto"
+            }
+          },
+          "documentTypes": {
+            "type": "array",
+            "description": "Evidence form types to require on this control",
+            "items": {
+              "type": "string",
+              "enum": [
+                "board_meeting",
+                "it_leadership_meeting",
+                "risk_committee_meeting",
+                "meeting",
+                "access_request",
+                "whistleblower_report",
+                "penetration_test",
+                "rbac_matrix",
+                "infrastructure_inventory",
+                "employee_performance_evaluation",
+                "network_diagram",
+                "tabletop_exercise"
+              ]
             }
           }
         },
@@ -25151,7 +25251,11 @@
         "properties": {
           "requirementId": {
             "type": "string",
-            "description": "Requirement ID"
+            "description": "Platform requirement ID"
+          },
+          "customRequirementId": {
+            "type": "string",
+            "description": "Org-custom requirement ID"
           },
           "frameworkInstanceId": {
             "type": "string",
@@ -25159,7 +25263,6 @@
           }
         },
         "required": [
-          "requirementId",
           "frameworkInstanceId"
         ]
       },
@@ -25176,6 +25279,35 @@
         },
         "required": [
           "requirements"
+        ]
+      },
+      "LinkDocumentTypesDto": {
+        "type": "object",
+        "properties": {
+          "formTypes": {
+            "type": "array",
+            "description": "Evidence form types to require for this control",
+            "items": {
+              "type": "string",
+              "enum": [
+                "board_meeting",
+                "it_leadership_meeting",
+                "risk_committee_meeting",
+                "meeting",
+                "access_request",
+                "whistleblower_report",
+                "penetration_test",
+                "rbac_matrix",
+                "infrastructure_inventory",
+                "employee_performance_evaluation",
+                "network_diagram",
+                "tabletop_exercise"
+              ]
+            }
+          }
+        },
+        "required": [
+          "formTypes"
         ]
       },
       "CreatePenetrationTestDto": {

@@ -19,6 +19,9 @@ interface RequirementOption {
   identifier: string;
   frameworkInstanceId: string;
   frameworkName: string;
+  requirementId?: string;
+  customRequirementId?: string;
+  isCustom: boolean;
 }
 
 interface ControlOptionsResponse {

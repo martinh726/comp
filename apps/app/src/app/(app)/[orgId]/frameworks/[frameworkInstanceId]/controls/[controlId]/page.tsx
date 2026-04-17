@@ -14,6 +14,8 @@ import { FrameworkControlShell } from './components/FrameworkControlShell';
 type ControlDetail = Control & {
   policies: Policy[];
   tasks: Task[];
+  controlDocumentTypes?: { formType: string }[];
+  submissionCountsByFormType?: Record<string, number>;
   requirementsMapped: (RequirementMap & {
     frameworkInstance: FrameworkInstance & {
       framework: FrameworkEditorFramework;
@@ -68,11 +70,18 @@ export default async function FrameworkControlPage({ params }: PageProps) {
     { label: control.name, isCurrent: true },
   ];
 
+  const documentRows = (control.controlDocumentTypes ?? []).map((d) => ({
+    formType: d.formType,
+    submissionCount:
+      control.submissionCountsByFormType?.[d.formType] ?? 0,
+  }));
+
   return (
     <FrameworkControlShell
       orgId={orgId}
       control={control}
       breadcrumbs={breadcrumbs}
+      documentRows={documentRows}
     />
   );
 }
