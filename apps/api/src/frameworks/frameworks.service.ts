@@ -257,8 +257,25 @@ export class FrameworksService {
       throw new BadRequestException('No valid requirements to link');
     }
 
+    const existing = await db.frameworkEditorRequirement.findMany({
+      where: {
+        frameworkId: fi.frameworkId,
+        organizationId,
+        identifier: { in: sources.map((r) => r.identifier) },
+      },
+      select: { identifier: true },
+    });
+    const existingIdentifiers = new Set(existing.map((r) => r.identifier));
+    const toCreate = sources.filter(
+      (r) => !existingIdentifiers.has(r.identifier),
+    );
+
+    if (toCreate.length === 0) {
+      return { count: 0, requirements: [] };
+    }
+
     const created = await db.frameworkEditorRequirement.createManyAndReturn({
-      data: sources.map((r) => ({
+      data: toCreate.map((r) => ({
         name: r.name,
         identifier: r.identifier,
         description: r.description,
@@ -288,6 +305,7 @@ export class FrameworksService {
       where: {
         id: requirementKey,
         frameworkId: fi.frameworkId,
+        OR: [{ organizationId: null }, { organizationId }],
       },
     });
     if (!requirement) {

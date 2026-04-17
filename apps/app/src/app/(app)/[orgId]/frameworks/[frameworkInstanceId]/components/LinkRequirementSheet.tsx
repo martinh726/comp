@@ -46,7 +46,7 @@ export function LinkRequirementSheet({
     [frameworks, frameworkInstanceId],
   );
 
-  const { data: options = [] } = useSWR<RequirementOption[]>(
+  const { data: options = [], isLoading } = useSWR<RequirementOption[]>(
     isOpen && otherFrameworkIds.length > 0
       ? ['link-requirements-options', ...otherFrameworkIds]
       : null,
@@ -131,7 +131,11 @@ export function LinkRequirementSheet({
             <SheetTitle>Link Existing Requirements</SheetTitle>
           </SheetHeader>
           <SheetBody>
-            {options.length === 0 ? (
+            {isLoading ? (
+              <Text size="sm" variant="muted">
+                Loading requirements…
+              </Text>
+            ) : options.length === 0 ? (
               <Text size="sm" variant="muted">
                 No requirements available from other frameworks.
               </Text>

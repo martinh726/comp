@@ -10,6 +10,7 @@ export class CreateCustomRequirementDto {
 
   @ApiProperty({ description: 'Identifier', example: '10.3' })
   @IsString()
+  @MinLength(1)
   @MaxLength(80)
   identifier: string;
 
