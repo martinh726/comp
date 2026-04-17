@@ -1,8 +1,12 @@
+import { EvidenceFormType } from '@db';
+
 // Prisma `EvidenceFormType` enum values are snake_case at the TS level
 // (Prisma maps them to kebab-case strings in the DB). The `/documents/[formType]`
 // URL uses the kebab-case form, so we convert when navigating.
 
-export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+// Typed as Record<EvidenceFormType, string> so adding a new form-type to the
+// Prisma enum without updating this map becomes a compile error.
+export const DOCUMENT_TYPE_LABELS: Record<EvidenceFormType, string> = {
   meeting: 'Meeting',
   board_meeting: 'Board Meeting',
   it_leadership_meeting: 'IT Leadership Meeting',
@@ -17,10 +21,12 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   tabletop_exercise: 'Tabletop Exercise',
 };
 
-export const ALL_DOCUMENT_TYPES: string[] = Object.keys(DOCUMENT_TYPE_LABELS);
+export const ALL_DOCUMENT_TYPES = Object.keys(
+  DOCUMENT_TYPE_LABELS,
+) as EvidenceFormType[];
 
-export function getDocumentTypeLabel(formType: string): string {
-  return DOCUMENT_TYPE_LABELS[formType] ?? formType;
+export function getDocumentTypeLabel(formType: EvidenceFormType | string): string {
+  return DOCUMENT_TYPE_LABELS[formType as EvidenceFormType] ?? formType;
 }
 
 export function toDocumentUrlSlug(formType: string): string {

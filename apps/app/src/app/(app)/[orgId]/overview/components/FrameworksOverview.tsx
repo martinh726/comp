@@ -82,7 +82,12 @@ export function FrameworksOverview({
   );
 
   const availableFrameworksToAdd = allFrameworks.filter(
-    (framework) => !frameworksWithControls.some((fc) => fc.framework?.id === framework.id),
+    (framework) =>
+      !frameworksWithControls.some(
+        (fc) =>
+          fc.framework?.id === framework.id ||
+          fc.customFramework?.id === framework.id,
+      ),
   );
 
   return (

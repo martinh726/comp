@@ -121,7 +121,7 @@ export class FrameworksService {
       }),
       db.evidenceSubmission.findMany({
         where: { organizationId },
-        select: { formType: true, createdAt: true },
+        select: { formType: true, submittedAt: true },
       }),
     ]);
 
@@ -199,8 +199,8 @@ export class FrameworksService {
                 organizationId,
                 formType: { in: Array.from(allFormTypes) },
               },
-              select: { id: true, formType: true, createdAt: true },
-              orderBy: { createdAt: 'desc' },
+              select: { id: true, formType: true, submittedAt: true },
+              orderBy: { submittedAt: 'desc' },
             })
           : Promise.resolve([]),
       ]);
@@ -503,8 +503,8 @@ export class FrameworksService {
               organizationId,
               formType: { in: Array.from(formTypes) },
             },
-            select: { id: true, formType: true, createdAt: true },
-            orderBy: { createdAt: 'desc' },
+            select: { id: true, formType: true, submittedAt: true },
+            orderBy: { submittedAt: 'desc' },
           })
         : [];
 

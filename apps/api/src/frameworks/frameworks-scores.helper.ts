@@ -224,7 +224,7 @@ interface TaskWithControls {
 
 interface EvidenceSubmissionForScoring {
   formType: string;
-  createdAt: Date | string;
+  submittedAt: Date | string;
 }
 
 function isControlCompleted(
@@ -252,14 +252,14 @@ function isControlCompleted(
   if (documentTypes.length > 0) {
     const sorted = [...evidenceSubmissions].sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
     );
     const now = Date.now();
     for (const dt of documentTypes) {
       const latest = sorted.find((es) => es.formType === dt.formType);
       if (
         !latest ||
-        now - new Date(latest.createdAt).getTime() > SIX_MONTHS_MS
+        now - new Date(latest.submittedAt).getTime() > SIX_MONTHS_MS
       ) {
         documentsComplete = false;
         break;

@@ -13,6 +13,7 @@ model CustomFramework {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@unique([id, organizationId])
   @@index([organizationId])
 }
 
@@ -25,7 +26,9 @@ model CustomRequirement {
   organizationId    String
   organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   customFrameworkId String
-  customFramework   CustomFramework @relation(fields: [customFrameworkId], references: [id], onDelete: Cascade)
+  // Composite FK onto (id, organizationId) so tenant consistency with the
+  // referenced CustomFramework is enforced at the DB level.
+  customFramework   CustomFramework @relation(fields: [customFrameworkId, organizationId], references: [id, organizationId], onDelete: Cascade)
 
   requirementMaps RequirementMap[]
 

@@ -113,7 +113,7 @@ export function DocumentsTable({
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={pending === row.formType}
+                    disabled={pending !== null}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnlink(row.formType);

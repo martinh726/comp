@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Post,
   Query,
   UseGuards,
@@ -159,7 +160,8 @@ export class ControlsController {
   async unlinkDocumentType(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
-    @Param('formType') formType: EvidenceFormType,
+    @Param('formType', new ParseEnumPipe(EvidenceFormType))
+    formType: EvidenceFormType,
   ) {
     return this.controlsService.unlinkDocumentType(
       id,
