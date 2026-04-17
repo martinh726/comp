@@ -237,30 +237,40 @@ export class ControlsService {
       }
     }
 
+    // Scope every FK supplied by the client to the caller's org before trusting
+    // it. Prisma FKs only check row existence, not tenancy.
+    const scopedPolicyIds = await this.validatePolicyIds(
+      policyIds,
+      organizationId,
+    );
+    const scopedTaskIds = await this.validateTaskIds(taskIds, organizationId);
+    const scopedRequirementMappings = await this.validateRequirementMappings(
+      requirementMappings,
+      organizationId,
+    );
+
     return db.$transaction(async (tx) => {
       const control = await tx.control.create({
         data: {
           name,
           description,
           organizationId,
-          ...(policyIds &&
-            policyIds.length > 0 && {
-              policies: {
-                connect: policyIds.map((id) => ({ id })),
-              },
-            }),
-          ...(taskIds &&
-            taskIds.length > 0 && {
-              tasks: {
-                connect: taskIds.map((id) => ({ id })),
-              },
-            }),
+          ...(scopedPolicyIds.length > 0 && {
+            policies: {
+              connect: scopedPolicyIds.map((id) => ({ id })),
+            },
+          }),
+          ...(scopedTaskIds.length > 0 && {
+            tasks: {
+              connect: scopedTaskIds.map((id) => ({ id })),
+            },
+          }),
         },
       });
 
-      if (requirementMappings && requirementMappings.length > 0) {
+      if (scopedRequirementMappings.length > 0) {
         await tx.requirementMap.createMany({
-          data: requirementMappings.map((mapping) => ({
+          data: scopedRequirementMappings.map((mapping) => ({
             controlId: control.id,
             frameworkInstanceId: mapping.frameworkInstanceId,
             requirementId: mapping.requirementId ?? null,
@@ -282,6 +292,117 @@ export class ControlsService {
 
       return control;
     });
+  }
+
+  private async validatePolicyIds(
+    policyIds: string[] | undefined,
+    organizationId: string,
+  ): Promise<string[]> {
+    if (!policyIds || policyIds.length === 0) return [];
+    const policies = await db.policy.findMany({
+      where: { id: { in: policyIds }, organizationId },
+      select: { id: true },
+    });
+    if (policies.length !== policyIds.length) {
+      throw new BadRequestException('One or more policies are invalid');
+    }
+    return policies.map((p) => p.id);
+  }
+
+  private async validateTaskIds(
+    taskIds: string[] | undefined,
+    organizationId: string,
+  ): Promise<string[]> {
+    if (!taskIds || taskIds.length === 0) return [];
+    const tasks = await db.task.findMany({
+      where: { id: { in: taskIds }, organizationId },
+      select: { id: true },
+    });
+    if (tasks.length !== taskIds.length) {
+      throw new BadRequestException('One or more tasks are invalid');
+    }
+    return tasks.map((t) => t.id);
+  }
+
+  private async validateRequirementMappings(
+    mappings:
+      | {
+          requirementId?: string;
+          customRequirementId?: string;
+          frameworkInstanceId: string;
+        }[]
+      | undefined,
+    organizationId: string,
+  ) {
+    if (!mappings || mappings.length === 0) return [];
+
+    const frameworkInstanceIds = Array.from(
+      new Set(mappings.map((m) => m.frameworkInstanceId)),
+    );
+    const instances = await db.frameworkInstance.findMany({
+      where: { id: { in: frameworkInstanceIds }, organizationId },
+      select: { id: true, frameworkId: true, customFrameworkId: true },
+    });
+    const instanceById = new Map(instances.map((i) => [i.id, i]));
+    if (instances.length !== frameworkInstanceIds.length) {
+      throw new BadRequestException(
+        'One or more framework instances are invalid',
+      );
+    }
+
+    const platformReqIds = mappings
+      .map((m) => m.requirementId)
+      .filter((id): id is string => Boolean(id));
+    const customReqIds = mappings
+      .map((m) => m.customRequirementId)
+      .filter((id): id is string => Boolean(id));
+
+    const [platformReqs, customReqs] = await Promise.all([
+      platformReqIds.length > 0
+        ? db.frameworkEditorRequirement.findMany({
+            where: { id: { in: platformReqIds } },
+            select: { id: true, frameworkId: true },
+          })
+        : Promise.resolve<{ id: string; frameworkId: string }[]>([]),
+      customReqIds.length > 0
+        ? db.customRequirement.findMany({
+            where: { id: { in: customReqIds }, organizationId },
+            select: { id: true, customFrameworkId: true },
+          })
+        : Promise.resolve<{ id: string; customFrameworkId: string }[]>([]),
+    ]);
+    const platformReqFwById = new Map(
+      platformReqs.map((r) => [r.id, r.frameworkId]),
+    );
+    const customReqFwById = new Map(
+      customReqs.map((r) => [r.id, r.customFrameworkId]),
+    );
+
+    for (const m of mappings) {
+      const instance = instanceById.get(m.frameworkInstanceId);
+      if (!instance) {
+        throw new BadRequestException(
+          'One or more framework instances are invalid',
+        );
+      }
+      if (m.requirementId) {
+        const reqFwId = platformReqFwById.get(m.requirementId);
+        if (!reqFwId || reqFwId !== instance.frameworkId) {
+          throw new BadRequestException(
+            'One or more requirement mappings are invalid',
+          );
+        }
+      } else if (m.customRequirementId) {
+        const reqFwId = customReqFwById.get(m.customRequirementId);
+        if (!reqFwId || reqFwId !== instance.customFrameworkId) {
+          throw new BadRequestException(
+            'One or more requirement mappings are invalid',
+          );
+        }
+      }
+    }
+
+    return mappings;
   }
 
   private async ensureControl(controlId: string, organizationId: string) {
