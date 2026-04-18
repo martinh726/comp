@@ -1,3 +1,10 @@
+## [3.23.6](https://github.com/trycompai/comp/compare/v3.23.5...v3.23.6) (2026-04-18)
+
+
+### Bug Fixes
+
+* **digest:** correct signedBy check, rollup per user, skip dead orgs ([7269f59](https://github.com/trycompai/comp/commit/7269f5903aaf7cee18ae4b20ff5022f5455852b1))
+
 ## [3.23.5](https://github.com/trycompai/comp/compare/v3.23.4...v3.23.5) (2026-04-17)
 
 
