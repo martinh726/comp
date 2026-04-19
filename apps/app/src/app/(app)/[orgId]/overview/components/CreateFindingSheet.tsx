@@ -386,8 +386,8 @@ export function CreateFindingSheet({
                   }
                 }}
               >
-                <SelectTrigger className="w-full">
-                  <span className="block truncate text-left">
+                <SelectTrigger>
+                  <span className="block max-w-full truncate text-left">
                     {selectedTemplate ? selectedTemplate.title : 'Select a template...'}
                   </span>
                 </SelectTrigger>
@@ -553,8 +553,8 @@ function EntityPicker({
     <div className="w-full">
       <label className="text-sm font-medium">Select {labelForKind(kind)}</label>
       <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
-        <SelectTrigger className="w-full">
-          <span className="block truncate text-left">
+        <SelectTrigger>
+          <span className="block max-w-full truncate text-left">
             {options.find((o) => o.id === value)?.label ?? `Select…`}
           </span>
         </SelectTrigger>
