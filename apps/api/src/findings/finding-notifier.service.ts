@@ -446,26 +446,27 @@ export class FindingNotifierService {
     ];
   }
 
+  /**
+   * Task-finding recipients: org owners + admins + the task's assignee.
+   * Mirrors the policy/vendor/risk/device branches so that finding content
+   * is only disclosed to stakeholders of that specific target, not fanned
+   * out to every active member of the org.
+   */
   private async getTaskRecipients(
     organizationId: string,
     taskId: string,
     excludeUserId: string,
   ): Promise<Recipient[]> {
     try {
-      const members = await db.member.findMany({
-        where: {
-          organizationId,
-          deactivated: false,
-          OR: [
-            { user: { role: { not: 'admin' } } },
-            { role: { contains: 'owner' } },
-          ],
-        },
-        select: {
-          user: { select: { id: true, email: true, name: true } },
-        },
+      const task = await db.task.findUnique({
+        where: { id: taskId },
+        select: { assignee: { select: { userId: true } } },
       });
-      return this.dedupe(members, excludeUserId);
+      return this.includeAdmins(
+        organizationId,
+        excludeUserId,
+        task?.assignee?.userId ?? null,
+      );
     } catch (error) {
       this.logger.error('Failed to resolve task recipients:', error);
       return [];
