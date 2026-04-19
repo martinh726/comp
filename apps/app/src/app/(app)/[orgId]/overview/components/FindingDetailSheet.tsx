@@ -81,6 +81,32 @@ function targetHref(f: Finding, orgId: string): string | null {
   return null;
 }
 
+const LEGACY_SCOPE_LABELS: Record<string, string> = {
+  people: 'People › Directory',
+  people_tasks: 'People › Tasks',
+  people_devices: 'People › Devices',
+  people_chart: 'People › Org chart',
+};
+
+/**
+ * Rows that pre-date the unified-findings migration have their original
+ * `FindingScope` value preserved on the creation AuditLog entry. Surface it
+ * so owners/admins can see where the finding was originally filed — otherwise
+ * legacy people-scope findings all look identical under `area='people'`.
+ */
+function legacyScopeLabelFromHistory(
+  history: FindingHistoryEntry[] | undefined,
+): string | null {
+  if (!history || history.length === 0) return null;
+  // History comes back newest-first; the creation entry is the oldest one.
+  const createdEntry = [...history]
+    .reverse()
+    .find((e) => e.data?.action === 'created');
+  const scope = createdEntry?.data?.findingScope;
+  if (!scope) return null;
+  return LEGACY_SCOPE_LABELS[scope] ?? scope;
+}
+
 function targetLabel(f: Finding): string {
   if (f.task) return `Task: ${f.task.title}`;
   if (f.policy) return `Policy: ${f.policy.name}`;
@@ -137,6 +163,7 @@ export function FindingDetailSheet({
   const history: FindingHistoryEntry[] = Array.isArray(historyData?.data)
     ? historyData.data
     : [];
+  const legacyScopeLabel = legacyScopeLabelFromHistory(history);
 
   const contentChanged = canEditContent && content !== finding.content;
   const isDirty =
@@ -227,6 +254,14 @@ export function FindingDetailSheet({
               <Text size="sm" weight="medium">
                 {targetLabel(finding)}
               </Text>
+              {legacyScopeLabel && (
+                <p className="text-xs text-muted-foreground">
+                  Originally logged against{' '}
+                  <span className="font-medium text-foreground">
+                    {legacyScopeLabel}
+                  </span>
+                </p>
+              )}
               {href && (
                 <Link
                   href={href}
