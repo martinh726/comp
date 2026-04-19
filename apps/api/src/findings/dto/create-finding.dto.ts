@@ -70,7 +70,12 @@ export class CreateFindingDto {
     enum: FindingArea,
     required: false,
   })
-  @IsEnum(FindingArea)
+  // Use an explicit string list instead of @IsEnum(FindingArea). The Prisma-
+  // generated enum is captured at decorator-eval time, so a dev server started
+  // before `prisma generate` picked up new enum values will keep rejecting
+  // them (e.g. "area must be one of the following values: people, documents,
+  // compliance" even though `risks`/`vendors`/`policies` are now valid).
+  @IsIn(['people', 'documents', 'compliance', 'risks', 'vendors', 'policies', 'other'])
   @IsOptional()
   area?: FindingArea;
 
