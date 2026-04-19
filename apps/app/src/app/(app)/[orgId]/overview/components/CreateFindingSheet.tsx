@@ -74,6 +74,9 @@ const AREA_OPTIONS: { value: FindingArea; label: string }[] = [
   { value: FindingArea.people, label: 'People' },
   { value: FindingArea.documents, label: 'Documents' },
   { value: FindingArea.compliance, label: 'Compliance' },
+  { value: FindingArea.risks, label: 'Risks (general)' },
+  { value: FindingArea.vendors, label: 'Vendors (general)' },
+  { value: FindingArea.policies, label: 'Policies (general)' },
 ];
 
 const createFindingSchema = z.object({

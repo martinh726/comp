@@ -78,6 +78,9 @@ function targetHref(f: Finding, orgId: string): string | null {
   if (f.evidenceFormType) return `/${orgId}/documents/${f.evidenceFormType}`;
   if (f.area === 'people') return `/${orgId}/people`;
   if (f.area === 'documents') return `/${orgId}/documents`;
+  if (f.area === 'risks') return `/${orgId}/risks`;
+  if (f.area === 'vendors') return `/${orgId}/vendors`;
+  if (f.area === 'policies') return `/${orgId}/policies`;
   return null;
 }
 
@@ -116,6 +119,9 @@ function targetLabel(f: Finding): string {
   if (f.device) return `Device: ${f.device.name || f.device.hostname}`;
   if (f.evidenceSubmission) return `Document: ${f.evidenceSubmission.formType}`;
   if (f.evidenceFormType) return `Document: ${f.evidenceFormType}`;
+  if (f.area === 'risks') return 'Risks (general)';
+  if (f.area === 'vendors') return 'Vendors (general)';
+  if (f.area === 'policies') return 'Policies (general)';
   if (f.area) return `Area: ${f.area}`;
   return 'Finding';
 }
