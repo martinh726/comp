@@ -71,14 +71,14 @@ function targetHref(f: Finding, orgId: string): string | null {
   if (f.taskId) return `/${orgId}/tasks/${f.taskId}`;
   if (f.policyId) return `/${orgId}/policies/${f.policyId}`;
   if (f.vendorId) return `/${orgId}/vendors/${f.vendorId}`;
-  if (f.riskId) return `/${orgId}/risks/${f.riskId}`;
+  if (f.riskId) return `/${orgId}/risk/${f.riskId}`;
   if (f.memberId) return `/${orgId}/people/${f.memberId}`;
   if (f.deviceId) return `/${orgId}/people?tab=devices&device=${f.deviceId}`;
   if (f.evidenceSubmission) return `/${orgId}/documents/${f.evidenceSubmission.formType}`;
   if (f.evidenceFormType) return `/${orgId}/documents/${f.evidenceFormType}`;
   if (f.area === 'people') return `/${orgId}/people`;
   if (f.area === 'documents') return `/${orgId}/documents`;
-  if (f.area === 'risks') return `/${orgId}/risks`;
+  if (f.area === 'risks') return `/${orgId}/risk`;
   if (f.area === 'vendors') return `/${orgId}/vendors`;
   if (f.area === 'policies') return `/${orgId}/policies`;
   return null;
