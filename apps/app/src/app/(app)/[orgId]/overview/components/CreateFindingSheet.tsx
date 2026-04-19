@@ -386,8 +386,10 @@ export function CreateFindingSheet({
                   }
                 }}
               >
-                <SelectTrigger>
-                  {selectedTemplate ? selectedTemplate.title : 'Select a template...'}
+                <SelectTrigger className="w-full">
+                  <span className="block truncate text-left">
+                    {selectedTemplate ? selectedTemplate.title : 'Select a template...'}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No template — custom finding</SelectItem>
@@ -551,8 +553,10 @@ function EntityPicker({
     <div className="w-full">
       <label className="text-sm font-medium">Select {labelForKind(kind)}</label>
       <Select value={value} onValueChange={(v) => onChange(v ?? '')}>
-        <SelectTrigger>
-          {options.find((o) => o.id === value)?.label ?? `Select…`}
+        <SelectTrigger className="w-full">
+          <span className="block truncate text-left">
+            {options.find((o) => o.id === value)?.label ?? `Select…`}
+          </span>
         </SelectTrigger>
         <SelectContent>
           {options.length === 0 && <SelectItem value="__none" disabled>No options</SelectItem>}
