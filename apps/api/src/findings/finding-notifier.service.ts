@@ -115,12 +115,12 @@ function findingNoun(f: FindingForNotification): string {
   return 'area';
 }
 
-/** Deep-link the recipient into the overview Findings tab with the right filter. */
+/** Deep-link the recipient into the Findings page with the finding sheet pre-opened. */
 function buildFindingDeepLink(
   organizationId: string,
   findingId: string,
 ): string {
-  return `${getAppUrl()}/${organizationId}/overview?tab=findings&open=${findingId}`;
+  return `${getAppUrl()}/${organizationId}/overview/findings?open=${findingId}`;
 }
 
 @Injectable()

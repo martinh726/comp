@@ -35,7 +35,8 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Search, WarningAlt } from '@trycompai/design-system/icons';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { CreateFindingSheet } from './CreateFindingSheet';
 import { FindingDetailSheet } from './FindingDetailSheet';
 
@@ -118,6 +119,10 @@ export function FindingsTab({
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('finding', 'create');
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const openFindingId = searchParams?.get('open') ?? null;
+
   const { data, mutate } = useOrganizationFindings(
     {},
     initialFindings
@@ -125,6 +130,21 @@ export function FindingsTab({
       : {},
   );
   const findings: Finding[] = Array.isArray(data?.data) ? data.data : [];
+
+  // Support deep links (e.g. emails + in-app notifications) that land on
+  // `/overview/findings?open=<id>`. Auto-open the matching finding's sheet
+  // once we've loaded the list, then strip the query param so a page
+  // refresh doesn't reopen it.
+  useEffect(() => {
+    if (!openFindingId) return;
+    const match = findings.find((f) => f.id === openFindingId);
+    if (!match) return;
+    setSelectedFinding((current) => current ?? match);
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.delete('open');
+    const query = params.toString();
+    router.replace(query ? `?${query}` : '?', { scroll: false });
+  }, [openFindingId, findings, router, searchParams]);
 
   const filtered = useMemo(() => {
     let result = [...findings];
