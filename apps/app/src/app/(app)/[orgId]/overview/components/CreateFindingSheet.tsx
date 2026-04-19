@@ -67,6 +67,7 @@ const TARGET_OPTIONS: { value: TargetKind; label: string }[] = [
   { value: 'member', label: 'Person' },
   { value: 'device', label: 'Device' },
   { value: 'evidenceFormType', label: 'Document type' },
+  { value: 'evidenceSubmission', label: 'Evidence submission' },
   { value: 'area', label: 'Area' },
 ];
 
