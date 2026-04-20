@@ -85,6 +85,7 @@ export function usePermissions() {
     permissions,
     customPermissions,
     obligations,
+    roles: roleNames,
     hasPermission: (resource: string, action: string) =>
       hasPermission(permissions, resource, action),
     canAccessAuditorView: canAccessAuditorView(roleString, customPermissions),
