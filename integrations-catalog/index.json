@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T21:14:04.234Z",
+  "generatedAt": "2026-04-20T21:22:12.175Z",
   "total": 540,
   "sourceCount": 540,
   "uniqueSlugs": 540,
@@ -4210,15 +4210,6 @@
       "file": "integrations/stytch.json"
     },
     {
-      "slug": "sumologic",
-      "name": "Sumo Logic",
-      "category": "Monitoring",
-      "authType": "custom",
-      "checkCount": 2,
-      "syncSupported": false,
-      "file": "integrations/sumologic.json"
-    },
-    {
       "slug": "sumo-logic",
       "name": "Sumo Logic",
       "category": "Monitoring",
@@ -4226,6 +4217,15 @@
       "checkCount": 2,
       "syncSupported": false,
       "file": "integrations/sumo-logic.json"
+    },
+    {
+      "slug": "sumologic",
+      "name": "Sumo Logic",
+      "category": "Monitoring",
+      "authType": "custom",
+      "checkCount": 2,
+      "syncSupported": false,
+      "file": "integrations/sumologic.json"
     },
     {
       "slug": "supabase",

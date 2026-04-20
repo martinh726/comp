@@ -385,8 +385,8 @@ curl https://raw.githubusercontent.com/trycompai/comp/main/integrations-catalog/
 | [Statsig](integrations/statsig.json) | `statsig` | custom | 2 |  |
 | [StatusCake](integrations/statuscake.json) | `statuscake` | custom | 4 |  |
 | [Statuspage](integrations/statuspage.json) | `statuspage` | api_key | 2 |  |
-| [Sumo Logic](integrations/sumologic.json) | `sumologic` | custom | 2 |  |
 | [Sumo Logic](integrations/sumo-logic.json) | `sumo-logic` | basic | 2 |  |
+| [Sumo Logic](integrations/sumologic.json) | `sumologic` | custom | 2 |  |
 | [Updown.io](integrations/updown.json) | `updown` | custom | 2 |  |
 
 ### Productivity (111)
@@ -633,7 +633,7 @@ curl https://raw.githubusercontent.com/trycompai/comp/main/integrations-catalog/
 
 ## How this is maintained
 
-This catalog is synced manually on demand from the CompAI production API. To request an updated snapshot or a new integration, open an issue.
+This catalog is synced manually on demand from the CompAI production API using the tooling in [`tools/integrations-catalog-sync/`](../tools/integrations-catalog-sync). To request a refreshed snapshot or a new integration, open an issue.
 
 ## License
 

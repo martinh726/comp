@@ -5,9 +5,10 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
-const INDEX_FILE = join(ROOT, "index.json");
-const README_FILE = join(ROOT, "README.md");
+const REPO_ROOT = join(__dirname, "..", "..");
+const CATALOG_ROOT = join(REPO_ROOT, "integrations-catalog");
+const INDEX_FILE = join(CATALOG_ROOT, "index.json");
+const README_FILE = join(CATALOG_ROOT, "README.md");
 
 const index = JSON.parse(readFileSync(INDEX_FILE, "utf8"));
 const { total, byCategory, integrations, generatedAt } = index;
@@ -74,7 +75,7 @@ ${catSections}
 
 ## How this is maintained
 
-This catalog is synced manually on demand from the CompAI production API. To request an updated snapshot or a new integration, open an issue.
+This catalog is synced manually on demand from the CompAI production API using the tooling in [\`tools/integrations-catalog-sync/\`](../tools/integrations-catalog-sync). To request a refreshed snapshot or a new integration, open an issue.
 
 ## License
 

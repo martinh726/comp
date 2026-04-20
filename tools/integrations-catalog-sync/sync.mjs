@@ -6,15 +6,20 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
-const INTEGRATIONS_DIR = join(ROOT, "integrations");
-const INDEX_FILE = join(ROOT, "index.json");
+const REPO_ROOT = join(__dirname, "..", "..");
+const CATALOG_ROOT = join(REPO_ROOT, "integrations-catalog");
+const INTEGRATIONS_DIR = join(CATALOG_ROOT, "integrations");
+const INDEX_FILE = join(CATALOG_ROOT, "index.json");
 
-const API_BASE = process.env.COMPAI_INTERNAL_API_BASE || "https://api.trycomp.ai/v1/internal";
+const API_BASE = process.env.COMPAI_INTERNAL_API_BASE;
 const TOKEN = process.env.COMPAI_INTERNAL_TOKEN;
 
+if (!API_BASE) {
+  console.error("COMPAI_INTERNAL_API_BASE env var is required");
+  process.exit(1);
+}
 if (!TOKEN) {
-  console.error("COMPAI_INTERNAL_TOKEN is required");
+  console.error("COMPAI_INTERNAL_TOKEN env var is required");
   process.exit(1);
 }
 
