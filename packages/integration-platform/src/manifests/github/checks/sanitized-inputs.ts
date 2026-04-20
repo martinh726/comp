@@ -189,16 +189,27 @@ export const sanitizedInputsCheck: IntegrationCheck = {
     const escapeRegex = (s: string): string =>
       s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const checkPythonFile = (content: string, filePath: string): ValidationMatch | null => {
+    const checkPythonFile = (
+      content: string,
+      filePath: string,
+      fileName: string,
+    ): ValidationMatch | null => {
       // Parse line-by-line so we can strip comments and match package names as
       // standalone tokens (e.g. don't match "schema" inside "jsonschema" or inside
       // a prose comment).
+      //
+      // Comment syntax differs between the two Python dependency file formats:
+      //   - pyproject.toml (TOML): `#` starts a comment anywhere outside a string.
+      //     Dependency values are always quoted, so stripping at any `#` is safe
+      //     — the package name in `"name @ url#egg=name"` appears before the URL.
+      //   - requirements.txt (pip): `#` only starts a comment when preceded by
+      //     whitespace (or at line start). This preserves VCS URL fragments like
+      //     `git+https://...#egg=pydantic` used for editable installs.
+      const isTOML = fileName === 'pyproject.toml';
+      const stripCommentRegex = isTOML ? /#.*$/ : /(^|\s)#.*$/;
       const lines = content.split('\n');
       for (const rawLine of lines) {
-        // Strip only actual comments (`#` preceded by whitespace or at line start).
-        // This preserves URL fragments like `git+https://...#egg=pydantic` used for
-        // editable VCS installs in requirements.txt.
-        const line = rawLine.replace(/(^|\s)#.*$/, '').toLowerCase();
+        const line = rawLine.replace(stripCommentRegex, '').toLowerCase();
         if (!line.trim()) continue;
         for (const candidate of PY_VALIDATION_PACKAGES) {
           const escaped = escapeRegex(candidate.toLowerCase());
@@ -258,7 +269,7 @@ export const sanitizedInputsCheck: IntegrationCheck = {
           const match = checkPackageJson(content, entry.path);
           if (match) matches.push(match);
         } else if (fileName === 'requirements.txt' || fileName === 'pyproject.toml') {
-          const match = checkPythonFile(content, entry.path);
+          const match = checkPythonFile(content, entry.path, fileName);
           if (match) matches.push(match);
         } else if (fileName === 'composer.json') {
           const match = checkComposerJson(content, entry.path);
