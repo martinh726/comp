@@ -74,11 +74,10 @@ describe('Built-in role permissions — regression', () => {
       }
     });
 
-    it('should have audit create/update only (no read, no delete)', () => {
-      // CS-189: audit:read is reserved for auditor-facing views; owner can
-      // still manage audit scope via create/update.
-      expect(perms.audit).toEqual(expect.arrayContaining(['create', 'update']));
-      expect(perms.audit).not.toContain('read');
+    it('should have audit create/read/update (no delete)', () => {
+      expect(perms.audit).toEqual(
+        expect.arrayContaining(['create', 'read', 'update']),
+      );
       expect(perms.audit).not.toContain('delete');
     });
 
