@@ -24,6 +24,7 @@ node tools/integrations-catalog-sync/generate-readme.mjs
 Optional tuning:
 
 - `SYNC_CONCURRENCY` (default `2`) — concurrent fetches. Higher values trigger API rate limits.
+- `SYNC_MIN_INTERVAL_MS` (default `100`) — minimum interval between HTTP requests, enforced globally across all workers. Paces the sync to stay under the API throttle. Increase if you still see 429s; decrease (or set `0`) if the backend is raised later.
 
 ## Safety guardrails
 

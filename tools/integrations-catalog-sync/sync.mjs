@@ -56,9 +56,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const MIN_REQUEST_INTERVAL_MS = parseInt(process.env.SYNC_MIN_INTERVAL_MS || "100", 10);
+let nextAllowedAt = 0;
+
+async function pace() {
+  const now = Date.now();
+  if (now < nextAllowedAt) await sleep(nextAllowedAt - now);
+  nextAllowedAt = Date.now() + MIN_REQUEST_INTERVAL_MS;
+}
+
 async function fetchJson(path, maxRetries = 5) {
   let lastError;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await pace();
     const res = await fetch(`${API_BASE}${path}`, { headers: HEADERS });
     if (res.ok) return res.json();
     const text = await res.text();
@@ -66,6 +76,7 @@ async function fetchJson(path, maxRetries = 5) {
       const retryAfter = parseInt(res.headers.get("retry-after") || "0", 10);
       const delay = retryAfter > 0 ? retryAfter * 1000 : Math.min(1000 * Math.pow(2, attempt), 15000);
       lastError = new Error(`${path} HTTP ${res.status}: ${text.slice(0, 200)}`);
+      console.warn(`  ${path} → ${res.status}, backing off ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
       await sleep(delay);
       continue;
     }
