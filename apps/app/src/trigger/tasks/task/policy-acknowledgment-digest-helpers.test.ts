@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   computePendingPolicies,
+  filterDigestMembersByCompliance,
   type DigestMember,
   type DigestPolicy,
 } from './policy-acknowledgment-digest-helpers';
@@ -36,14 +37,21 @@ const itOnlyPolicy: DigestPolicy = {
 
 describe('computePendingPolicies', () => {
   it('returns no pending policies when member has signed all applicable policies', () => {
-    const policies: DigestPolicy[] = [{ ...allPolicy, signedBy: ['usr_alice'] }];
+    const policies: DigestPolicy[] = [{ ...allPolicy, signedBy: ['mem_alice'] }];
     expect(computePendingPolicies(alice, policies)).toEqual([]);
   });
 
   it('returns policies where the member id is missing from signedBy[]', () => {
     const policies: DigestPolicy[] = [
-      { ...allPolicy, signedBy: ['usr_bob'] },
-      { ...itOnlyPolicy, id: 'pol_2', name: 'Second', signedBy: ['usr_alice'] },
+      { ...allPolicy, signedBy: ['mem_bob'] },
+      { ...itOnlyPolicy, id: 'pol_2', name: 'Second', signedBy: ['mem_alice'] },
+    ];
+    expect(computePendingPolicies(alice, policies).map((p) => p.id)).toEqual(['pol_all']);
+  });
+
+  it('does not treat the member user id as a signature (signedBy stores member ids, not user ids)', () => {
+    const policies: DigestPolicy[] = [
+      { ...allPolicy, signedBy: ['usr_alice'] },
     ];
     expect(computePendingPolicies(alice, policies).map((p) => p.id)).toEqual(['pol_all']);
   });
@@ -65,5 +73,63 @@ describe('computePendingPolicies', () => {
 
   it('returns empty array when there are no policies', () => {
     expect(computePendingPolicies(alice, [])).toEqual([]);
+  });
+});
+
+describe('filterDigestMembersByCompliance', () => {
+  const mockDb = {
+    organizationRole: { findMany: vi.fn() },
+  };
+
+  beforeEach(() => {
+    mockDb.organizationRole.findMany.mockReset();
+    mockDb.organizationRole.findMany.mockResolvedValue([]);
+  });
+
+  it('keeps members whose built-in role has the compliance obligation', async () => {
+    const member: DigestMember = {
+      id: 'm1', role: 'employee', department: 'it',
+      user: { id: 'u1', name: 'A', email: 'a@x', role: null },
+    };
+    const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
+    expect(result).toEqual([member]);
+  });
+
+  it('drops members whose only role lacks the compliance obligation', async () => {
+    const member: DigestMember = {
+      id: 'm2', role: 'auditor', department: null,
+      user: { id: 'u2', name: 'B', email: 'b@x', role: null },
+    };
+    const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
+    expect(result).toEqual([]);
+  });
+
+  it('drops platform admins even when member role has the obligation', async () => {
+    const member: DigestMember = {
+      id: 'm3', role: 'employee', department: 'it',
+      user: { id: 'u3', name: 'C', email: 'c@x', role: 'admin' },
+    };
+    const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
+    expect(result).toEqual([]);
+  });
+
+  it('resolves custom-role obligations via organizationRole lookup', async () => {
+    mockDb.organizationRole.findMany.mockResolvedValueOnce([
+      { name: 'contributor', obligations: { compliance: true } },
+    ]);
+    const keeper: DigestMember = {
+      id: 'm4', role: 'contributor', department: 'hr',
+      user: { id: 'u4', name: 'D', email: 'd@x', role: null },
+    };
+    const dropper: DigestMember = {
+      id: 'm5', role: 'observer', department: 'hr',
+      user: { id: 'u5', name: 'E', email: 'e@x', role: null },
+    };
+    const result = await filterDigestMembersByCompliance(
+      mockDb,
+      [keeper, dropper],
+      'org_1',
+    );
+    expect(result.map((m) => m.id)).toEqual(['m4']);
   });
 });

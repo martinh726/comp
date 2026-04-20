@@ -1,3 +1,75 @@
+## [3.25.1](https://github.com/trycompai/comp/compare/v3.25.0...v3.25.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* allow creating new version of policy even if empty or if using pdf ([a78d96b](https://github.com/trycompai/comp/commit/a78d96bc342858b4bc04b5c7d0d6fd362363f8f2))
+
+# [3.25.0](https://github.com/trycompai/comp/compare/v3.24.0...v3.25.0) (2026-04-20)
+
+
+### Bug Fixes
+
+* **app:** hide policy alerts if pending version is cleared ([#2604](https://github.com/trycompai/comp/issues/2604)) ([a7389a1](https://github.com/trycompai/comp/commit/a7389a1cf0388c58ede6ebbcad55688b079962be))
+* **controls:** dedupe policyIds/taskIds before validating length ([5de8a67](https://github.com/trycompai/comp/commit/5de8a67c550883cad5d7e6a5bc2de37a455fd031))
+* **controls:** scope FK inputs to caller org in create() ([2b8991f](https://github.com/trycompai/comp/commit/2b8991f0f87867dbef9ba86c5a2533df6258c3ea))
+* **framework-editor:** stop auto-linking all framework requirements on control create ([#2605](https://github.com/trycompai/comp/issues/2605)) ([3f681e5](https://github.com/trycompai/comp/commit/3f681e5596a120477dd8f2a26a7c4c3a1beddd94))
+* **frameworks:** address PR review feedback ([e3b58bc](https://github.com/trycompai/comp/commit/e3b58bcf5c4b2b987954f3b896f30b2c309d9ea9))
+* **frameworks:** address review feedback — tenant-FK hardening + custom-framework parity ([d296e2a](https://github.com/trycompai/comp/commit/d296e2a5309a33e61a630c843f99618d82778e8a))
+* **frameworks:** dedupe linked requirements and scope lookups by org ([c39a7c5](https://github.com/trycompai/comp/commit/c39a7c583e375c7c84625ad30ccddb904ee50be5))
+* **frameworks:** remove debug log and return DB-reported link counts ([409be26](https://github.com/trycompai/comp/commit/409be2623d153cf9b7619ffb61890405370057ff))
+* **onboarding:** set default value for organizationId in updatePolicy schema ([c3a50db](https://github.com/trycompai/comp/commit/c3a50dbd05278ab88ebc896d05d7de0ddf836f9a))
+
+
+### Features
+
+* **controls:** add endpoints to link policies, tasks, and requirements to controls ([0380ff7](https://github.com/trycompai/comp/commit/0380ff71c4525f4e29ae9412046ca59cad542974))
+* **frameworks:** add custom framework and requirement management endpoints ([a81af3e](https://github.com/trycompai/comp/commit/a81af3efb7e0b69cfbec9c4c2160dee198e6e01c))
+
+# [3.24.0](https://github.com/trycompai/comp/compare/v3.23.6...v3.24.0) (2026-04-19)
+
+
+### Bug Fixes
+
+* **findings:** accept new FindingArea values regardless of client regen ([fa234fb](https://github.com/trycompai/comp/commit/fa234fbe7ae080401b1213a9f656a5761647ced4))
+* **findings:** address review feedback (routes, DTO, notifier, admin pickers) ([f41a096](https://github.com/trycompai/comp/commit/f41a09665312fa63817c6a48bb068212fd7496e0))
+* **findings:** drop className on SelectTrigger (type error) ([32a98b7](https://github.com/trycompai/comp/commit/32a98b76e9ce38c2a2f8ec8cb8de9b4d9f2d3cdf))
+* **findings:** expose evidence submission target + complete test mock ([320d053](https://github.com/trycompai/comp/commit/320d0530d62e2f0b4dd67f1399b7d7a76615219a))
+* **findings:** match API's literal auditor-role check in status gating ([9f2ccdd](https://github.com/trycompai/comp/commit/9f2ccdd6f1339a8e01e8142308636dd5aaaa0fee))
+* **findings:** reclassify legacy-backfilled rows to area='other' ([e689c95](https://github.com/trycompai/comp/commit/e689c95ca3f6cfd3717b652d960fd5850b924ba7))
+* **findings:** role-gated status options, severity filter, admin picker ([00a3350](https://github.com/trycompai/comp/commit/00a335042e126320f4982f3d1248e95a09807eb6))
+* **findings:** scope task-finding notifications to stakeholders ([2db2f7b](https://github.com/trycompai/comp/commit/2db2f7b79fd7cb8cf1c6bd3da7a34b78ea435fc4))
+* **findings:** support general risk/vendor/policy findings + dedupe activity ([4ebcc10](https://github.com/trycompai/comp/commit/4ebcc109a5376c467f7cf60030b96a532317eb14))
+* **findings:** truncate long labels in Create Finding select triggers ([96976a9](https://github.com/trycompai/comp/commit/96976a9543065380b4886aa3198a8229a542f854))
+* **findings:** use AuditLog findingScope to drive legacy reclass + preserve origin ([ba9e970](https://github.com/trycompai/comp/commit/ba9e970356f41827019d6913897570fa39d07110))
+
+
+### Features
+
+* **findings:** add confirmation dialog for finding deletion and link sharing functionality ([0d49475](https://github.com/trycompai/comp/commit/0d4947547860c85026f60794ae2652d4710a9fdc))
+* **findings:** surface legacy scope in UI, drop destructive reclass migration ([30c312f](https://github.com/trycompai/comp/commit/30c312f7bddf819f12c913a8e787c4267c95d38f))
+* **findings:** unify findings into a single overview surface ([3b5418a](https://github.com/trycompai/comp/commit/3b5418a25cdd0a28de867675afec591db1e949dc))
+
+
+### Performance Improvements
+
+* **people:** move compliance queries out of page shell ([6b8e4c6](https://github.com/trycompai/comp/commit/6b8e4c6bc4353b86da17cd01f0af61dbbe2c9d73))
+
+## [3.23.6](https://github.com/trycompai/comp/compare/v3.23.5...v3.23.6) (2026-04-18)
+
+
+### Bug Fixes
+
+* **digest:** correct signedBy check, rollup per user, skip dead orgs ([7269f59](https://github.com/trycompai/comp/commit/7269f5903aaf7cee18ae4b20ff5022f5455852b1))
+
+## [3.23.5](https://github.com/trycompai/comp/compare/v3.23.4...v3.23.5) (2026-04-17)
+
+
+### Bug Fixes
+
+* batch policy acceptance emails, daily ([ceb3c50](https://github.com/trycompai/comp/commit/ceb3c50a0671001188e12d9500dffa9840fd6416))
+* **digest:** inline compliance filter to avoid trigger.dev bundle failure ([#2591](https://github.com/trycompai/comp/issues/2591)) ([cee8ed4](https://github.com/trycompai/comp/commit/cee8ed419b00d7a87ffbdb1b7e207cd1898abd78))
+
 ## [3.23.4](https://github.com/trycompai/comp/compare/v3.23.3...v3.23.4) (2026-04-17)
 
 
